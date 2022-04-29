@@ -528,7 +528,7 @@ def main():
     filename = args.inputfile[0]
     f = None
     try:
-        f = open(filename, 'r')
+        f = open(filename, 'r', encoding="ISO-8859-1")
     except:
         print("Error: can\'t open input file!")
         return
