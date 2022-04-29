@@ -92,17 +92,17 @@ class LexicalUnit(object):
     @staticmethod
     def extract_from_line(line):
         fields = line.split('\t')
-        if field[0] == Identifier.__class__.__name__:
+        if fields[0] == Identifier.__class__.__name__:
             return Identifier(fields[1], fields[2], fields[3], fields[4])
-        elif field[0] == Keyword.__class__.__name__:
+        elif fields[0] == Keyword.__class__.__name__:
             return Keyword(fields[1], fields[2], fields[3], fields[4])
-        elif field[0] == Character.__class__.__name__:
+        elif fields[0] == Character.__class__.__name__:
             return Character(fields[1], fields[2], fields[3], fields[4])
-        elif field[0] == Symbol.__class__.__name__:
+        elif fields[0] == Symbol.__class__.__name__:
             return Symbol(fields[1], fields[2], fields[3], fields[4])
-        elif field[0] == Fel.__class__.__name__:
+        elif fields[0] == Fel.__class__.__name__:
             return Fel(fields[1], fields[2], fields[3], fields[4])
-        elif field[0] == Integer.__class__.__name__:
+        elif fields[0] == Integer.__class__.__name__:
             return Integer(fields[1], fields[2], fields[3], fields[4])
 
     # Returns the object as a formatted string
