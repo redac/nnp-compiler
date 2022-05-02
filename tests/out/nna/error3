@@ -1,0 +1,13 @@
+Keyword	8	0	9	procedure
+Identifier	8	10	1	e
+Keyword	8	12	2	is
+Identifier	9	2	3	val
+Character	9	5	1	:
+Keyword	9	7	7	integer
+Character	9	14	1	;
+Keyword	10	0	5	begin
+Identifier	11	2	3	val
+Symbol	11	5	2	:=
+Keyword	11	7	4	true
+Keyword	12	0	3	end
+Fel	12	3	1	.
