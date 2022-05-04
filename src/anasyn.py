@@ -8,6 +8,7 @@ import sys
 import argparse
 import re
 import logging
+from tkinter import N
 
 import analex
 
@@ -24,9 +25,11 @@ LOGGING_LEVEL = logging.DEBUG
 # various entities such as variable and function names, classes, objects, etc.
 #
 # key = object identity (unique)
+# ['ident', 'type', @address, []]
 #
 
 identifierTable = {}
+anyVarsIDs = []    # Stores variables with unknown type
 
 
 class AnaSynException(Exception):
@@ -172,11 +175,21 @@ def mode(lexical_analyser):
 
 
 def nnpType(lexical_analyser):
+    # Parses types
+    for obj in identifierTable:
+        type = identifierTable[obj][1]
+        if type == "any":
+            anyVarsIDs.append(obj)
+    print(anyVarsIDs)
     if lexical_analyser.isKeyword("integer"):
         lexical_analyser.acceptKeyword("integer")
         logger.debug("integer type")
+        for varID in anyVarsIDs:
+            identifierTable[varID][1] = "integer"
     elif lexical_analyser.isKeyword("boolean"):
         lexical_analyser.acceptKeyword("boolean")
+        for varID in anyVarsIDs:
+            identifierTable[varID][1] = "boolean"
         logger.debug("boolean type")
     else:
         logger.error("Unknown type found <" +
@@ -206,7 +219,8 @@ def declaVar(lexical_analyser):
 def listeIdent(lexical_analyser):
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("identifier found: "+str(ident))
-
+    # Add variable to the ident table, with an "any" type for now
+    identifierTable[id(ident)] = [ident, "any", len(identifierTable), []]
     if lexical_analyser.isCharacter(","):
         lexical_analyser.acceptCharacter(",")
         listeIdent(lexical_analyser)
