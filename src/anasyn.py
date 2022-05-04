@@ -177,8 +177,8 @@ def mode(lexical_analyser):
 def nnpType(lexical_analyser):
     # Parses types
     for obj in identifierTable:
-        type = identifierTable[obj][1]
-        if type == "any":
+        objType = identifierTable[obj][1]
+        if objType == "any":
             anyVarsIDs.append(obj)
     print(anyVarsIDs)
     if lexical_analyser.isKeyword("integer"):
