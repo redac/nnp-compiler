@@ -1,16 +1,25 @@
 # Code relatif à la génération de code
-from numpy import void
-
-
-class codeGenerator:
+class CodeGenerator:
 	
 	# Constructeur
 	def __init__(self):
 		self.generatedCode = []
-		instrIndex = 0
+		self.instrIndex = 0
 	
 
 	########### Méthodes ###########
 
-	def genererCode(self, chaineCodee):
-		return void
+	# 
+	def addCode(self,code):
+		self.generatedCode.append((self.instrIndex,code))
+		self.instrIndex += 1
+
+	def get_instruction_counter(self):
+		return self.instrIndex
+	
+	def get_instruction_at_index(self, instrIndex):
+		return self.generatedCode[self.instrIndex-1]
+
+	def affiche(self):
+		for i in range(self.instrIndex):
+			print(self.generatedCode[i][0],self.generatedCode[i][1])

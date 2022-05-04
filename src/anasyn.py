@@ -4,12 +4,15 @@
 # 	Syntactical Analyser package.
 #
 
+from ast import While
+from hashlib import new
 import sys
 import argparse
 import re
 import logging
 
 import analex
+import codeGenerator
 
 logger = logging.getLogger('anasyn')
 
@@ -28,10 +31,13 @@ class AnaSynException(Exception):
 # Syntactical Diagrams
 ########################################################################
 
+cg = codeGenerator.CodeGenerator()
+
 
 def program(lexical_analyser):
     specifProgPrinc(lexical_analyser)
     lexical_analyser.acceptKeyword("is")
+    cg.addCode("debutProg();")
     corpsProgPrinc(lexical_analyser)
 
 
@@ -512,7 +518,7 @@ def main():
     filename = args.inputfile[0]
     f = None
     try:
-        f = open(filename, 'r')
+        f = open(filename, 'r', encoding="ISO-8859-1")
     except:
         print("Error: can\'t open input file!")
         return
@@ -562,13 +568,16 @@ def main():
         output_file = sys.stdout
 
     # Outputs the generated code to a file
-    #instrIndex = 0
-    # while instrIndex < codeGenerator.get_instruction_counter():
-    #        output_file.write("%s\n" % str(codeGenerator.get_instruction_at_index(instrIndex)))
-    #        instrIndex += 1
+    instrIndex = 0
+    while instrIndex < cg.get_instruction_counter():
+            output_file.write("%s\n" % str(cg.get_instruction_at_index(instrIndex)))
+            instrIndex += 1
 
     if outputFilename != "":
         output_file.close()
+    
+    #print("affiche")
+    cg.affiche()
 
 ########################################################################
 
