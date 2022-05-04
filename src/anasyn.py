@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 # @package anasyn
-# 	Syntactical Analyser package.
+# Syntactical Analyser package.
 #
 
 import sys
@@ -13,8 +13,20 @@ import analex
 
 logger = logging.getLogger('anasyn')
 
-DEBUG = False
+DEBUG = True
 LOGGING_LEVEL = logging.DEBUG
+
+
+# Identifier Table declaration
+#
+# keeps track of semantics of variables i.e. it stores information about the
+# scope and binding information about names, information about instances of
+# various entities such as variable and function names, classes, objects, etc.
+#
+# key = object identity (unique)
+#
+
+identifierTable = {}
 
 
 class AnaSynException(Exception):
@@ -39,6 +51,8 @@ def specifProgPrinc(lexical_analyser):
     lexical_analyser.acceptKeyword("procedure")
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("Name of program : "+ident)
+    # key = object identity (unique)
+    identifierTable[id(ident)] = [ident, "procedure", len(identifierTable), []]
 
 
 def corpsProgPrinc(lexical_analyser):
@@ -85,6 +99,7 @@ def declaOp(lexical_analyser):
 def procedure(lexical_analyser):
     lexical_analyser.acceptKeyword("procedure")
     ident = lexical_analyser.acceptIdentifier()
+    identifierTable[id(ident)] = [ident, "procedure", len(identifierTable), []]
     logger.debug("Name of procedure : "+ident)
 
     partieFormelle(lexical_analyser)
@@ -96,6 +111,7 @@ def procedure(lexical_analyser):
 def fonction(lexical_analyser):
     lexical_analyser.acceptKeyword("function")
     ident = lexical_analyser.acceptIdentifier()
+    identifierTable[id(ident)] = [ident, "function", len(identifierTable), []]
     logger.debug("Name of function : "+ident)
 
     partieFormelle(lexical_analyser)
@@ -489,8 +505,9 @@ def retour(lexical_analyser):
     lexical_analyser.acceptKeyword("return")
     expression(lexical_analyser)
 
-
 ########################################################################
+
+
 def main():
 
     parser = argparse.ArgumentParser(
@@ -512,7 +529,7 @@ def main():
     filename = args.inputfile[0]
     f = None
     try:
-        f = open(filename, 'r')
+        f = open(filename, 'r', encoding="ISO-8859-1")
     except:
         print("Error: can\'t open input file!")
         return
@@ -549,7 +566,7 @@ def main():
 
     if args.show_ident_table:
         print("------ IDENTIFIER TABLE ------")
-        # print str(identifierTable)
+        print(str(identifierTable))
         print("------ END OF IDENTIFIER TABLE ------")
 
     if outputFilename != "":
