@@ -33,6 +33,7 @@ class AnaSynException(Exception):
 ########################################################################
 
 # Pour la génération de code
+# Chaque ajout de code se fera par cg.addCode("exemple de code objet")
 cg = codeGenerator.CodeGenerator()
 
 
@@ -147,7 +148,7 @@ def listeSpecifFormelles(lexical_analyser):
 
 
 def specif(lexical_analyser):
-    listeIdent(lexical_analyser,0)
+    listeIdent(lexical_analyser)
     lexical_analyser.acceptCharacter(":")
     if lexical_analyser.isKeyword("in"):
         mode(lexical_analyser)
@@ -190,22 +191,24 @@ def listeDeclaVar(lexical_analyser):
 
 
 def declaVar(lexical_analyser):
-    n=listeIdent(lexical_analyser,0)
+    n=listeIdent(lexical_analyser)
+    logger.debug(str(n)+ " variables")
     lexical_analyser.acceptCharacter(":")
     logger.debug("now parsing type...")
     nnpType(lexical_analyser)
     cg.addCode("réserver("+str(n)+")")
     lexical_analyser.acceptCharacter(";")
 
-
-def listeIdent(lexical_analyser,n):
+# La fonction renvoie le nombre d'éléments de la liste de déclaration
+def listeIdent(lexical_analyser):
+    n=1
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("identifier found: "+str(ident))
-    n+=1
 
     if lexical_analyser.isCharacter(","):
         lexical_analyser.acceptCharacter(",")
-        listeIdent(lexical_analyser,n)
+        n = listeIdent(lexical_analyser)+1
+        
     return n
 
 
@@ -515,11 +518,11 @@ def boucle(lexical_analyser):
     expression(lexical_analyser)
 
     lexical_analyser.acceptKeyword("loop")
-    cg.addCode("tze(ad2); //loop")
+    cg.addCode("tze(ad2); //loop condition (end)")
     suiteInstr(lexical_analyser)
 
     lexical_analyser.acceptKeyword("end")
-    cg.addCode("tra(ad1); //loop")
+    cg.addCode("tra(ad1); //back to loop")
     logger.debug("end of while loop ")
 
 
@@ -535,7 +538,7 @@ def altern(lexical_analyser):
 
     if lexical_analyser.isKeyword("else"):
         lexical_analyser.acceptKeyword("else")
-        cg.addCode("tra(ad2); //if")
+        cg.addCode("tra(ad2); //else")
         suiteInstr(lexical_analyser)
 
     lexical_analyser.acceptKeyword("end")
@@ -628,8 +631,6 @@ def main():
     if outputFilename != "":
         output_file.close()
     
-    #print("affiche")
-    cg.affiche()
 
 ########################################################################
 
