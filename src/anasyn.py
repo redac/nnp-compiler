@@ -147,7 +147,7 @@ def listeSpecifFormelles(lexical_analyser):
 
 
 def specif(lexical_analyser):
-    listeIdent(lexical_analyser)
+    listeIdent(lexical_analyser,0)
     lexical_analyser.acceptCharacter(":")
     if lexical_analyser.isKeyword("in"):
         mode(lexical_analyser)
@@ -186,23 +186,27 @@ def listeDeclaVar(lexical_analyser):
     declaVar(lexical_analyser)
     if lexical_analyser.isIdentifier():
         listeDeclaVar(lexical_analyser)
+    
 
 
 def declaVar(lexical_analyser):
-    listeIdent(lexical_analyser)
+    n=listeIdent(lexical_analyser,0)
     lexical_analyser.acceptCharacter(":")
     logger.debug("now parsing type...")
     nnpType(lexical_analyser)
+    cg.addCode("réserver("+str(n)+")")
     lexical_analyser.acceptCharacter(";")
 
 
-def listeIdent(lexical_analyser):
+def listeIdent(lexical_analyser,n):
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("identifier found: "+str(ident))
+    n+=1
 
     if lexical_analyser.isCharacter(","):
         lexical_analyser.acceptCharacter(",")
-        listeIdent(lexical_analyser)
+        listeIdent(lexical_analyser,n)
+    return n
 
 
 def suiteInstrNonVide(lexical_analyser):
