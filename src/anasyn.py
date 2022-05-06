@@ -6,6 +6,7 @@
 
 from ast import While
 from hashlib import new
+from operator import le
 import sys
 import argparse
 import re
@@ -61,6 +62,7 @@ def corpsProgPrinc(lexical_analyser):
 
     lexical_analyser.acceptKeyword("end")
     lexical_analyser.acceptFel()
+    cg.addCode("finProg();")
     logger.debug("End of program")
 
 
@@ -227,8 +229,10 @@ def instr(lexical_analyser):
         ident = lexical_analyser.acceptIdentifier()
         if lexical_analyser.isSymbol(":="):
             # affectation
+            cg.addCode("empiler(ad(<"+ident+">))")
             lexical_analyser.acceptSymbol(":=")
             expression(lexical_analyser)
+            cg.addCode("affectation()")
             logger.debug("parsed affectation")
         elif lexical_analyser.isCharacter("("):
             lexical_analyser.acceptCharacter("(")
@@ -321,14 +325,20 @@ def exp3(lexical_analyser):
     logger.debug("parsing exp3")
     exp4(lexical_analyser)
     if lexical_analyser.isCharacter("+") or lexical_analyser.isCharacter("-"):
+        moins= lexical_analyser.isCharacter("-")
         opAdd(lexical_analyser)
         exp4(lexical_analyser)
+        if moins:
+            cg.addCode("moins")
+        cg.addCode("add")
+        
 
 
 def opAdd(lexical_analyser):
     logger.debug("parsing additive operator: " + lexical_analyser.get_value())
     if lexical_analyser.isCharacter("+"):
         lexical_analyser.acceptCharacter("+")
+        
 
     elif lexical_analyser.isCharacter("-"):
         lexical_analyser.acceptCharacter("-")
@@ -344,8 +354,13 @@ def exp4(lexical_analyser):
 
     prim(lexical_analyser)
     if lexical_analyser.isCharacter("*") or lexical_analyser.isCharacter("/"):
+        fois = lexical_analyser.isCharacter("*")
         opMult(lexical_analyser)
         prim(lexical_analyser)
+        if fois:
+            cg.addCode("mult")
+        else:
+            cg.addCode("div")
 
 
 def opMult(lexical_analyser):
@@ -418,6 +433,7 @@ def elemPrim(lexical_analyser):
 def valeur(lexical_analyser):
     if lexical_analyser.isInteger():
         entier = lexical_analyser.acceptInteger()
+        cg.addCode("empiler("+str(entier)+")")
         logger.debug("integer value: " + str(entier))
         return "integer"
     elif lexical_analyser.isKeyword("true") or lexical_analyser.isKeyword("false"):
@@ -432,11 +448,13 @@ def valeur(lexical_analyser):
 def valBool(lexical_analyser):
     if lexical_analyser.isKeyword("true"):
         lexical_analyser.acceptKeyword("true")
+        cg.addCode("empiler(1)")
         logger.debug("boolean true value")
 
     else:
         logger.debug("boolean false value")
         lexical_analyser.acceptKeyword("false")
+        cg.addCode("empiler(0)")
 
     return "boolean"
 
@@ -570,7 +588,7 @@ def main():
     # Outputs the generated code to a file
     instrIndex = 0
     while instrIndex < cg.get_instruction_counter():
-            output_file.write("%s\n" % str(cg.get_instruction_at_index(instrIndex)))
+            output_file.write("%s\n" % str(cg.get_instruction_at_index(instrIndex)[1]))
             instrIndex += 1
 
     if outputFilename != "":
