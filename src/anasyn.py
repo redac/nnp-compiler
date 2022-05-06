@@ -33,6 +33,7 @@ class AnaSynException(Exception):
 ########################################################################
 
 # Pour la génération de code
+# Chaque ajout de code se fera par cg.addCode("exemple de code objet")
 cg = codeGenerator.CodeGenerator()
 
 
@@ -611,8 +612,6 @@ def main():
     if outputFilename != "":
         output_file.close()
     
-    #print("affiche")
-    #cg.affiche()
 
 ########################################################################
 
