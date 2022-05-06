@@ -63,7 +63,7 @@ def corpsProgPrinc(lexical_analyser):
 
     lexical_analyser.acceptKeyword("end")
     lexical_analyser.acceptFel()
-    cg.addCode("finProg;")
+    cg.addCode("finProg();")
     logger.debug("End of program")
 
 
@@ -230,7 +230,7 @@ def instr(lexical_analyser):
         ident = lexical_analyser.acceptIdentifier()
         if lexical_analyser.isSymbol(":="):
             # affectation
-            cg.addCode("empiler(ad(<"+ident+">))")
+            cg.addCode("empiler(ad(<"+ident+">))") #à changer
             lexical_analyser.acceptSymbol(":=")
             expression(lexical_analyser)
             cg.addCode("affectation()")
@@ -394,9 +394,11 @@ def opUnaire(lexical_analyser):
 
     elif lexical_analyser.isCharacter("-"):
         lexical_analyser.acceptCharacter("-")
+        cg.addCode("moins()")
 
     elif lexical_analyser.isKeyword("not"):
         lexical_analyser.acceptKeyword("not")
+        cg.addCode("non()")
 
     else:
         msg = "Unknown additive operator <" + lexical_analyser.get_value() + ">!"
@@ -466,12 +468,15 @@ def es(lexical_analyser):
         lexical_analyser.acceptKeyword("get")
         lexical_analyser.acceptCharacter("(")
         ident = lexical_analyser.acceptIdentifier()
+        cg.addCode("empiler(ad(<"+ident+">))") #à changer
+        cg.addCode("get()")
         lexical_analyser.acceptCharacter(")")
         logger.debug("Call to get "+ident)
     elif lexical_analyser.isKeyword("put"):
         lexical_analyser.acceptKeyword("put")
         lexical_analyser.acceptCharacter("(")
         expression(lexical_analyser)
+        cg.addCode("put()")
         lexical_analyser.acceptCharacter(")")
         logger.debug("Call to put")
     else:
