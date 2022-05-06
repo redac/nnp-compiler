@@ -4,12 +4,16 @@
 # 	Syntactical Analyser package.
 #
 
+from ast import While
+from hashlib import new
+from operator import le
 import sys
 import argparse
 import re
 import logging
 
 import analex
+import codeGenerator
 
 logger = logging.getLogger('anasyn')
 
@@ -28,10 +32,15 @@ class AnaSynException(Exception):
 # Syntactical Diagrams
 ########################################################################
 
+# Pour la génération de code
+# Chaque ajout de code se fera par cg.addCode("exemple de code objet")
+cg = codeGenerator.CodeGenerator()
+
 
 def program(lexical_analyser):
     specifProgPrinc(lexical_analyser)
     lexical_analyser.acceptKeyword("is")
+    cg.addCode("debutProg();")
     corpsProgPrinc(lexical_analyser)
 
 
@@ -55,6 +64,7 @@ def corpsProgPrinc(lexical_analyser):
 
     lexical_analyser.acceptKeyword("end")
     lexical_analyser.acceptFel()
+    cg.addCode("finProg();")
     logger.debug("End of program")
 
 
@@ -177,23 +187,29 @@ def listeDeclaVar(lexical_analyser):
     declaVar(lexical_analyser)
     if lexical_analyser.isIdentifier():
         listeDeclaVar(lexical_analyser)
+    
 
 
 def declaVar(lexical_analyser):
-    listeIdent(lexical_analyser)
+    n=listeIdent(lexical_analyser)
+    logger.debug(str(n)+ " variables")
     lexical_analyser.acceptCharacter(":")
     logger.debug("now parsing type...")
     nnpType(lexical_analyser)
+    cg.addCode("réserver("+str(n)+")")
     lexical_analyser.acceptCharacter(";")
 
-
+# La fonction renvoie le nombre d'éléments de la liste de déclaration
 def listeIdent(lexical_analyser):
+    n=1
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("identifier found: "+str(ident))
 
     if lexical_analyser.isCharacter(","):
         lexical_analyser.acceptCharacter(",")
-        listeIdent(lexical_analyser)
+        n = listeIdent(lexical_analyser)+1
+        
+    return n
 
 
 def suiteInstrNonVide(lexical_analyser):
@@ -221,8 +237,10 @@ def instr(lexical_analyser):
         ident = lexical_analyser.acceptIdentifier()
         if lexical_analyser.isSymbol(":="):
             # affectation
+            cg.addCode("empiler(ad(<"+ident+">))") #à changer
             lexical_analyser.acceptSymbol(":=")
             expression(lexical_analyser)
+            cg.addCode("affectation()")
             logger.debug("parsed affectation")
         elif lexical_analyser.isCharacter("("):
             lexical_analyser.acceptCharacter("(")
@@ -256,6 +274,7 @@ def expression(lexical_analyser):
     if lexical_analyser.isKeyword("or"):
         lexical_analyser.acceptKeyword("or")
         exp1(lexical_analyser)
+        cg.addCode("or()")
 
 
 def exp1(lexical_analyser):
@@ -265,7 +284,7 @@ def exp1(lexical_analyser):
     if lexical_analyser.isKeyword("and"):
         lexical_analyser.acceptKeyword("and")
         exp2(lexical_analyser)
-
+        cg.addCode("et()")
 
 def exp2(lexical_analyser):
     logger.debug("parsing exp2")
@@ -275,12 +294,28 @@ def exp2(lexical_analyser):
             lexical_analyser.isSymbol("<=") or \
             lexical_analyser.isSymbol(">") or \
             lexical_analyser.isSymbol(">="):
+        infeg = lexical_analyser.isSymbol("<=")
+        inf = lexical_analyser.isSymbol("<")
+        sup = lexical_analyser.isSymbol(">")
         opRel(lexical_analyser)
         exp3(lexical_analyser)
+        if infeg:
+            cg.addCode("infeg()")
+        elif inf:
+            cg.addCode("inf()")
+        elif sup:
+            cg.addCode("sup()")
+        else:
+            cg.addCode("supeg()")
     elif lexical_analyser.isSymbol("=") or \
             lexical_analyser.isSymbol("/="):
+        egal= lexical_analyser.isSymbol("=")
         opRel(lexical_analyser)
         exp3(lexical_analyser)
+        if egal:
+            cg.addCode("egal()")
+        else:
+            cg.addCode("diff()")
 
 
 def opRel(lexical_analyser):
@@ -315,14 +350,20 @@ def exp3(lexical_analyser):
     logger.debug("parsing exp3")
     exp4(lexical_analyser)
     if lexical_analyser.isCharacter("+") or lexical_analyser.isCharacter("-"):
+        moins= lexical_analyser.isCharacter("-")
         opAdd(lexical_analyser)
         exp4(lexical_analyser)
+        if moins:
+            cg.addCode("moins")
+        cg.addCode("add")
+        
 
 
 def opAdd(lexical_analyser):
     logger.debug("parsing additive operator: " + lexical_analyser.get_value())
     if lexical_analyser.isCharacter("+"):
         lexical_analyser.acceptCharacter("+")
+        
 
     elif lexical_analyser.isCharacter("-"):
         lexical_analyser.acceptCharacter("-")
@@ -338,8 +379,13 @@ def exp4(lexical_analyser):
 
     prim(lexical_analyser)
     if lexical_analyser.isCharacter("*") or lexical_analyser.isCharacter("/"):
+        fois = lexical_analyser.isCharacter("*")
         opMult(lexical_analyser)
         prim(lexical_analyser)
+        if fois:
+            cg.addCode("mult")
+        else:
+            cg.addCode("div")
 
 
 def opMult(lexical_analyser):
@@ -372,9 +418,11 @@ def opUnaire(lexical_analyser):
 
     elif lexical_analyser.isCharacter("-"):
         lexical_analyser.acceptCharacter("-")
+        cg.addCode("moins()")
 
     elif lexical_analyser.isKeyword("not"):
         lexical_analyser.acceptKeyword("not")
+        cg.addCode("non()")
 
     else:
         msg = "Unknown additive operator <" + lexical_analyser.get_value() + ">!"
@@ -392,6 +440,8 @@ def elemPrim(lexical_analyser):
         valeur(lexical_analyser)
     elif lexical_analyser.isIdentifier():
         ident = lexical_analyser.acceptIdentifier()
+        cg.addCode("empiler(ad(<"+ident+">))") #à changer
+        cg.addCode("valeurPile()")
         if lexical_analyser.isCharacter("("):			# Appel fonct
             lexical_analyser.acceptCharacter("(")
             if not lexical_analyser.isCharacter(")"):
@@ -412,6 +462,7 @@ def elemPrim(lexical_analyser):
 def valeur(lexical_analyser):
     if lexical_analyser.isInteger():
         entier = lexical_analyser.acceptInteger()
+        cg.addCode("empiler("+str(entier)+")")
         logger.debug("integer value: " + str(entier))
         return "integer"
     elif lexical_analyser.isKeyword("true") or lexical_analyser.isKeyword("false"):
@@ -426,11 +477,13 @@ def valeur(lexical_analyser):
 def valBool(lexical_analyser):
     if lexical_analyser.isKeyword("true"):
         lexical_analyser.acceptKeyword("true")
+        cg.addCode("empiler(1)")
         logger.debug("boolean true value")
 
     else:
         logger.debug("boolean false value")
         lexical_analyser.acceptKeyword("false")
+        cg.addCode("empiler(0)")
 
     return "boolean"
 
@@ -441,12 +494,15 @@ def es(lexical_analyser):
         lexical_analyser.acceptKeyword("get")
         lexical_analyser.acceptCharacter("(")
         ident = lexical_analyser.acceptIdentifier()
+        cg.addCode("empiler(ad(<"+ident+">))") #à changer
+        cg.addCode("get()")
         lexical_analyser.acceptCharacter(")")
         logger.debug("Call to get "+ident)
     elif lexical_analyser.isKeyword("put"):
         lexical_analyser.acceptKeyword("put")
         lexical_analyser.acceptCharacter("(")
         expression(lexical_analyser)
+        cg.addCode("put()")
         lexical_analyser.acceptCharacter(")")
         logger.debug("Call to put")
     else:
@@ -457,13 +513,16 @@ def es(lexical_analyser):
 def boucle(lexical_analyser):
     logger.debug("parsing while loop: ")
     lexical_analyser.acceptKeyword("while")
+    ad1 = cg.get_instruction_counter()
 
     expression(lexical_analyser)
 
     lexical_analyser.acceptKeyword("loop")
+    cg.addCode("tze(ad2); //loop condition (end)")
     suiteInstr(lexical_analyser)
 
     lexical_analyser.acceptKeyword("end")
+    cg.addCode("tra(ad1); //back to loop")
     logger.debug("end of while loop ")
 
 
@@ -474,10 +533,12 @@ def altern(lexical_analyser):
     expression(lexical_analyser)
 
     lexical_analyser.acceptKeyword("then")
+    cg.addCode("tze(ad1); //if")     # modifier ad1 pour avoir la bonne addresse
     suiteInstr(lexical_analyser)
 
     if lexical_analyser.isKeyword("else"):
         lexical_analyser.acceptKeyword("else")
+        cg.addCode("tra(ad2); //else")
         suiteInstr(lexical_analyser)
 
     lexical_analyser.acceptKeyword("end")
@@ -512,7 +573,7 @@ def main():
     filename = args.inputfile[0]
     f = None
     try:
-        f = open(filename, 'r')
+        f = open(filename, 'r', encoding="ISO-8859-1")
     except:
         print("Error: can\'t open input file!")
         return
@@ -562,13 +623,14 @@ def main():
         output_file = sys.stdout
 
     # Outputs the generated code to a file
-    #instrIndex = 0
-    # while instrIndex < codeGenerator.get_instruction_counter():
-    #        output_file.write("%s\n" % str(codeGenerator.get_instruction_at_index(instrIndex)))
-    #        instrIndex += 1
+    instrIndex = 0
+    while instrIndex < cg.get_instruction_counter():
+            output_file.write("%s\n" % str(cg.get_instruction_at_index(instrIndex)[1]))
+            instrIndex += 1
 
     if outputFilename != "":
         output_file.close()
+    
 
 ########################################################################
 
