@@ -32,6 +32,7 @@ class AnaSynException(Exception):
 # Syntactical Diagrams
 ########################################################################
 
+# Pour la génération de code
 cg = codeGenerator.CodeGenerator()
 
 
@@ -62,7 +63,7 @@ def corpsProgPrinc(lexical_analyser):
 
     lexical_analyser.acceptKeyword("end")
     lexical_analyser.acceptFel()
-    cg.addCode("finProg();")
+    cg.addCode("finProg;")
     logger.debug("End of program")
 
 
@@ -481,13 +482,16 @@ def es(lexical_analyser):
 def boucle(lexical_analyser):
     logger.debug("parsing while loop: ")
     lexical_analyser.acceptKeyword("while")
+    ad1 = cg.get_instruction_counter()
 
     expression(lexical_analyser)
 
     lexical_analyser.acceptKeyword("loop")
+    cg.addCode("tze(ad2); //loop")
     suiteInstr(lexical_analyser)
 
     lexical_analyser.acceptKeyword("end")
+    cg.addCode("tra(ad1); //loop")
     logger.debug("end of while loop ")
 
 
@@ -498,10 +502,12 @@ def altern(lexical_analyser):
     expression(lexical_analyser)
 
     lexical_analyser.acceptKeyword("then")
+    cg.addCode("tze(ad1); //if")     # modifier ad1 pour avoir la bonne addresse
     suiteInstr(lexical_analyser)
 
     if lexical_analyser.isKeyword("else"):
         lexical_analyser.acceptKeyword("else")
+        cg.addCode("tra(ad2); //if")
         suiteInstr(lexical_analyser)
 
     lexical_analyser.acceptKeyword("end")
