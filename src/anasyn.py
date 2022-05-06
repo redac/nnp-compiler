@@ -271,6 +271,7 @@ def expression(lexical_analyser):
     if lexical_analyser.isKeyword("or"):
         lexical_analyser.acceptKeyword("or")
         exp1(lexical_analyser)
+        cg.addCode("or()")
 
 
 def exp1(lexical_analyser):
@@ -280,7 +281,7 @@ def exp1(lexical_analyser):
     if lexical_analyser.isKeyword("and"):
         lexical_analyser.acceptKeyword("and")
         exp2(lexical_analyser)
-
+        cg.addCode("et()")
 
 def exp2(lexical_analyser):
     logger.debug("parsing exp2")
@@ -290,12 +291,28 @@ def exp2(lexical_analyser):
             lexical_analyser.isSymbol("<=") or \
             lexical_analyser.isSymbol(">") or \
             lexical_analyser.isSymbol(">="):
+        infeg = lexical_analyser.isSymbol("<=")
+        inf = lexical_analyser.isSymbol("<")
+        sup = lexical_analyser.isSymbol(">")
         opRel(lexical_analyser)
         exp3(lexical_analyser)
+        if infeg:
+            cg.addCode("infeg()")
+        elif inf:
+            cg.addCode("inf()")
+        elif sup:
+            cg.addCode("sup()")
+        else:
+            cg.addCode("supeg()")
     elif lexical_analyser.isSymbol("=") or \
             lexical_analyser.isSymbol("/="):
+        egal= lexical_analyser.isSymbol("=")
         opRel(lexical_analyser)
         exp3(lexical_analyser)
+        if egal:
+            cg.addCode("egal()")
+        else:
+            cg.addCode("diff()")
 
 
 def opRel(lexical_analyser):
@@ -420,6 +437,8 @@ def elemPrim(lexical_analyser):
         valeur(lexical_analyser)
     elif lexical_analyser.isIdentifier():
         ident = lexical_analyser.acceptIdentifier()
+        cg.addCode("empiler(ad(<"+ident+">))") #à changer
+        cg.addCode("valeurPile()")
         if lexical_analyser.isCharacter("("):			# Appel fonct
             lexical_analyser.acceptCharacter("(")
             if not lexical_analyser.isCharacter(")"):
