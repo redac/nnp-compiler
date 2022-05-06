@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 # @package anasyn
-# 	Syntactical Analyser package.
+# Syntactical Analyser package.
 #
 
 from ast import While
@@ -11,14 +11,29 @@ import sys
 import argparse
 import re
 import logging
+from tkinter import N
 
 import analex
 import codeGenerator
 
 logger = logging.getLogger('anasyn')
 
-DEBUG = False
+DEBUG = True
 LOGGING_LEVEL = logging.DEBUG
+
+
+# Identifier Table declaration
+#
+# keeps track of semantics of variables i.e. it stores information about the
+# scope and binding information about names, information about instances of
+# various entities such as variable and function names, classes, objects, etc.
+#
+# key = object identity (unique)
+# ['ident', 'type', @address, []]
+#
+
+identifierTable = {}
+anyVarsIDs = []    # Stores variables with unknown type
 
 
 class AnaSynException(Exception):
@@ -48,6 +63,8 @@ def specifProgPrinc(lexical_analyser):
     lexical_analyser.acceptKeyword("procedure")
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("Name of program : "+ident)
+    # key = object identity (unique)
+    identifierTable[id(ident)] = [ident, "procedure", len(identifierTable), []]
 
 
 def corpsProgPrinc(lexical_analyser):
@@ -95,6 +112,7 @@ def declaOp(lexical_analyser):
 def procedure(lexical_analyser):
     lexical_analyser.acceptKeyword("procedure")
     ident = lexical_analyser.acceptIdentifier()
+    identifierTable[id(ident)] = [ident, "procedure", len(identifierTable), []]
     logger.debug("Name of procedure : "+ident)
 
     partieFormelle(lexical_analyser)
@@ -106,6 +124,7 @@ def procedure(lexical_analyser):
 def fonction(lexical_analyser):
     lexical_analyser.acceptKeyword("function")
     ident = lexical_analyser.acceptIdentifier()
+    identifierTable[id(ident)] = [ident, "function", len(identifierTable), []]
     logger.debug("Name of function : "+ident)
 
     partieFormelle(lexical_analyser)
@@ -166,11 +185,21 @@ def mode(lexical_analyser):
 
 
 def nnpType(lexical_analyser):
+    # Parses types
+    for obj in identifierTable:
+        objType = identifierTable[obj][1]
+        if objType == "any":
+            anyVarsIDs.append(obj)
+    print(anyVarsIDs)
     if lexical_analyser.isKeyword("integer"):
         lexical_analyser.acceptKeyword("integer")
         logger.debug("integer type")
+        for varID in anyVarsIDs:
+            identifierTable[varID][1] = "integer"
     elif lexical_analyser.isKeyword("boolean"):
         lexical_analyser.acceptKeyword("boolean")
+        for varID in anyVarsIDs:
+            identifierTable[varID][1] = "boolean"
         logger.debug("boolean type")
     else:
         logger.error("Unknown type found <" +
@@ -204,7 +233,8 @@ def listeIdent(lexical_analyser):
     n=1
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("identifier found: "+str(ident))
-
+    # Add variable to the ident table, with an "any" type for now
+    identifierTable[id(ident)] = [ident, "any", len(identifierTable), []]
     if lexical_analyser.isCharacter(","):
         lexical_analyser.acceptCharacter(",")
         n = listeIdent(lexical_analyser)+1
@@ -550,8 +580,9 @@ def retour(lexical_analyser):
     lexical_analyser.acceptKeyword("return")
     expression(lexical_analyser)
 
-
 ########################################################################
+
+
 def main():
 
     parser = argparse.ArgumentParser(
@@ -610,7 +641,7 @@ def main():
 
     if args.show_ident_table:
         print("------ IDENTIFIER TABLE ------")
-        # print str(identifierTable)
+        print(str(identifierTable))
         print("------ END OF IDENTIFIER TABLE ------")
 
     if outputFilename != "":
