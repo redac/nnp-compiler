@@ -220,7 +220,7 @@ def listeDeclaVar(lexical_analyser):
 
 
 def declaVar(lexical_analyser):
-    n=listeIdent(lexical_analyser)
+    n=listeIdent(lexical_analyser) # nombre de blocks à réserver
     logger.debug(str(n)+ " variables")
     lexical_analyser.acceptCharacter(":")
     logger.debug("now parsing type...")
@@ -234,7 +234,6 @@ def listeIdent(lexical_analyser):
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("identifier found: "+str(ident))
     # Add variable to the ident table, with an "any" type for now
-    identifierTable[id(ident)] = [ident, "any", len(identifierTable), []]
     if lexical_analyser.isCharacter(","):
         lexical_analyser.acceptCharacter(",")
         n = listeIdent(lexical_analyser)+1
@@ -267,7 +266,9 @@ def instr(lexical_analyser):
         ident = lexical_analyser.acceptIdentifier()
         if lexical_analyser.isSymbol(":="):
             # affectation
-            cg.addCode("empiler(ad(<"+ident+">))") #à changer
+            print(identifierTable)
+            addr = identifierTable[id(ident)][2]
+            cg.addCode("empiler(ad("+str(addr)+")") #à changer
             lexical_analyser.acceptSymbol(":=")
             expression(lexical_analyser)
             cg.addCode("affectation()")
