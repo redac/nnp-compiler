@@ -266,9 +266,15 @@ def instr(lexical_analyser):
         ident = lexical_analyser.acceptIdentifier()
         if lexical_analyser.isSymbol(":="):
             # affectation
+<<<<<<< HEAD
             print(identifierTable)
             addr = identifierTable[id(ident)][2]
             cg.addCode("empiler(ad("+str(addr)+")") #à changer
+=======
+            addr=identifierTable[id(ident)][2]
+            cg.addCode("empiler("+str(addr)+")      //ici")
+            
+>>>>>>> 3a28b2025befa62555f4d8838ec70180b7eb7495
             lexical_analyser.acceptSymbol(":=")
             expression(lexical_analyser)
             cg.addCode("affectation()")
@@ -436,10 +442,17 @@ def opMult(lexical_analyser):
 
 def prim(lexical_analyser):
     logger.debug("parsing prim")
-
+    moins=False
+    non=False
     if lexical_analyser.isCharacter("+") or lexical_analyser.isCharacter("-") or lexical_analyser.isKeyword("not"):
+        non=lexical_analyser.isCharacter("not")
+        moins=lexical_analyser.isCharacter("-")
         opUnaire(lexical_analyser)
     elemPrim(lexical_analyser)
+    if moins:
+        cg.addCode("moins()")
+    elif non:
+        cg.addCode("non()")
 
 
 def opUnaire(lexical_analyser):
@@ -449,11 +462,9 @@ def opUnaire(lexical_analyser):
 
     elif lexical_analyser.isCharacter("-"):
         lexical_analyser.acceptCharacter("-")
-        cg.addCode("moins()")
 
     elif lexical_analyser.isKeyword("not"):
         lexical_analyser.acceptKeyword("not")
-        cg.addCode("non()")
 
     else:
         msg = "Unknown additive operator <" + lexical_analyser.get_value() + ">!"
@@ -471,7 +482,8 @@ def elemPrim(lexical_analyser):
         valeur(lexical_analyser)
     elif lexical_analyser.isIdentifier():
         ident = lexical_analyser.acceptIdentifier()
-        cg.addCode("empiler(ad(<"+ident+">))") #à changer
+        addr=identifierTable[id(ident)][2]
+        cg.addCode("empiler("+str(addr)+")      //ici")
         cg.addCode("valeurPile()")
         if lexical_analyser.isCharacter("("):			# Appel fonct
             lexical_analyser.acceptCharacter("(")
@@ -525,7 +537,8 @@ def es(lexical_analyser):
         lexical_analyser.acceptKeyword("get")
         lexical_analyser.acceptCharacter("(")
         ident = lexical_analyser.acceptIdentifier()
-        cg.addCode("empiler(ad(<"+ident+">))") #à changer
+        addr=identifierTable[id(ident)][2]
+        cg.addCode("empiler("+str(addr)+")              //ici")
         cg.addCode("get()")
         lexical_analyser.acceptCharacter(")")
         logger.debug("Call to get "+ident)
@@ -662,6 +675,8 @@ def main():
 
     if outputFilename != "":
         output_file.close()
+
+    cg.affiche()
     
 
 ########################################################################
