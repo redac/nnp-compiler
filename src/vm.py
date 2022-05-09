@@ -28,12 +28,15 @@ class Pile:
             ch = "|\t" + str(x) + "\t|" + "\n" + ch
         ch = "\nEtat de la pile:\n" + ch
         return ch
+
+
 class VMException(Exception):
     def __init__(self, value):
         self.value = value
 
     def __str__(self):
         return repr(self.value)
+
 
 class virtual_machine:
 
@@ -62,26 +65,58 @@ class virtual_machine:
         print(str(val)+" empilé")
 
     def affectation(self):
-        val = self.pile.depiler()  #on récupère la valeur à affecter
-        ad = self.pile.depiler()   #on récupère l'adresse à affecter
-        #préconditions
-        if self.pointeur<ad+2:
+        val = self.pile.depiler()  # on récupère la valeur à affecter
+        ad = self.pile.depiler()  # on récupère l'adresse à affecter
+        # précondition
+        if self.pointeur < ad+2:
           raise VMException("Affectation: adresse incorrecte")
-        
+
         temp = Pile()
-        print("adresse:" + str(ad)+ "   valeur: "+str(val))
+        print("adresse:" + str(ad) + "   valeur: "+str(val))
         print(str(self.pile))
-        while len(self.pile.valeurs) != ad:
-            temp.empiler(self.pile.depiler)   #on empile toute la pile dans une pile temporaire
-        self.pile.empiler(val)      #on met la valeur à l'adresse indiquée
-        temp.depiler()    #on enlève l'ancienne valeur de la variable
-        while not temp.estVide(): 
-          self.pile.empiler(temp.depiler)  #on rempile la pile
-        self.pointeur-=2
-        print ("Valeur :"+str(val)+" affectée à l'adresse: "+str(ad))
+        self.pile.valeurs[ad] = val
+        # while len(self.pile.valeurs) != ad:
+        #     temp.empiler(self.pile.depiler)   #on empile toute la pile dans une pile temporaire
+        # self.pile.empiler(val)      #on met la valeur à l'adresse indiquée
+        # temp.depiler()    #on enlève l'ancienne valeur de la variable
+        # while not temp.estVide():
+        #   self.pile.empiler(temp.depiler)  #on rempile la pile
+        self.pointeur -= 2
+        print("Valeur :"+str(val)+" affectée à l'adresse: "+str(ad))
+
+    def valeurPile(self):
+      if self.pointeur < ad:
+          raise VMException("Affectation: adresse incorrecte")
+      ad = self.pile.depiler()
+      self.pile.empiler(self.pile.valeurs[ad])
+
+    def moins(self):
+      if self.pointeur <= 0:
+          raise VMException("Moins")
+      x=self.pile.depiler()
+      self.pile.empiler(-x)
+
+    def add(self):
+      a2=self.pile.depiler
+      a1=self.pile.depiler()
+      self.pile.empiler(a2+a1)
+
+    def sous(self):
+      a2=self.pile.depiler
+      a1=self.pile.depiler()
+      self.pile.empiler(a2-a1)
+    
+    def mult(self):
+      a2=self.pile.depiler
+      a1=self.pile.depiler()
+      self.pile.empiler(a2*a1)
+    
+    def div(self):
+      a2=self.pile.depiler
+      a1=self.pile.depiler()
+      self.pile.empiler(a2/a1)
 
     def analyse(self, l):
-
         if l == "debutProg();":
             self.init_analyser()
         elif reg_reserver.match(l):
@@ -90,6 +125,18 @@ class virtual_machine:
             self.empiler(int(reg_empiler.match(l).group(1)))
         elif l == "affectation()":
             self.affectation()
+        elif l == "valeurPile()":
+            self.valeurPile()
+        elif l == "moins()":
+            self.moins()
+        elif l == "add()":
+            self.add()
+        elif l == "sous()":
+            self.sous()
+        elif l == "mult()":
+            self.mult()
+        elif l == "div()":
+            self.div()                 
         # print(str(self.pile))
 
 
