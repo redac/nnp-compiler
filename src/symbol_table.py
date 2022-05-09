@@ -1,5 +1,13 @@
 # Code relatif à la table des identificateurs
-
+#
+# Symbol Table declaration
+#
+# keeps track of semantics of variables i.e. it stores information about the
+# scope and binding information about names, information about instances of
+# various entities such as variable and function names, classes, objects, etc.
+#
+# key = object identity (unique) by calling the python function id
+# table[id] = ['ident', 'type', @address, [return types if its a function]]
 
 import string
 

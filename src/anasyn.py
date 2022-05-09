@@ -17,20 +17,6 @@ DEBUG = True
 LOGGING_LEVEL = logging.DEBUG
 
 
-# Identifier Table declaration
-#
-# keeps track of semantics of variables i.e. it stores information about the
-# scope and binding information about names, information about instances of
-# various entities such as variable and function names, classes, objects, etc.
-#
-# key = object identity (unique)
-# ['ident', 'type', @address, []]
-#
-
-#identifierTable = {}
-#anyVarsIDs = []    # Stores variables with unknown type#
-
-
 class AnaSynException(Exception):
     def __init__(self, value):
         self.value = value
