@@ -19,6 +19,9 @@ class CodeGenerator:
 	
 	def get_instruction_at_index(self, instrIndex):
 		return self.generatedCode[instrIndex]
+	
+	def set_instruction_at_index(self, instrIndex, instr):
+		self.generatedCode[instrIndex] = instr
 
 	def affiche(self):
 		for i in range(self.instrIndex):

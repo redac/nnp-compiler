@@ -72,6 +72,7 @@ def corpsProgPrinc(lexical_analyser):
         logger.debug("Parsing declarations")
         partieDecla(lexical_analyser)
         logger.debug("End of declarations")
+        print(identifierTable)
     lexical_analyser.acceptKeyword("begin")
 
     if not lexical_analyser.isKeyword("end"):
@@ -234,6 +235,7 @@ def listeIdent(lexical_analyser):
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("identifier found: "+str(ident))
     # Add variable to the ident table, with an "any" type for now
+    identifierTable[id(ident)] = [ident, "any", len(identifierTable), []]
     if lexical_analyser.isCharacter(","):
         lexical_analyser.acceptCharacter(",")
         n = listeIdent(lexical_analyser)+1
@@ -266,7 +268,8 @@ def instr(lexical_analyser):
         ident = lexical_analyser.acceptIdentifier()
         if lexical_analyser.isSymbol(":="):
             # affectation
-            print(str(identifierTable))
+            print("table \t"+str(identifierTable))
+            print("ident \t"+str(id(ident)))
             addr=identifierTable[id(ident)][2]
             cg.addCode("empiler("+str(addr)+")      //ici")
             lexical_analyser.acceptSymbol(":=")
@@ -556,11 +559,14 @@ def boucle(lexical_analyser):
     expression(lexical_analyser)
 
     lexical_analyser.acceptKeyword("loop")
-    cg.addCode("tze(ad2); //loop condition (end)")
+    cg.addCode("tze(ad2); //doit pas apparaitre, remplacer avec ad2")
+    index_ad2 = cg.get_instruction_counter()
     suiteInstr(lexical_analyser)
 
     lexical_analyser.acceptKeyword("end")
-    cg.addCode("tra(ad1); //back to loop")
+    cg.addCode("tra("+str(ad1)+"); //back to loop")
+    ad2 = cg.get_instruction_counter()
+    cg.set_instruction_at_index(index_ad2,"tze("+str(ad2)+"); //loop condition (end)")
     logger.debug("end of while loop ")
 
 
