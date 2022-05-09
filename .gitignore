@@ -133,3 +133,5 @@ dmypy.json
 
 # sorties
 *.out
+
+*.nno
