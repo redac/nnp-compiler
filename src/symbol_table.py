@@ -9,6 +9,7 @@ class symbol_table:
     # Constructeur
     def __init__(self):
         self.table = {}
+        self.any_vars_ids = []  # Stores variables with unknown type
         self.object_index = 0
 
     ########### Méthodes ###########

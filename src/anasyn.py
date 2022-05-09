@@ -3,15 +3,13 @@
 # @package anasyn
 # Syntactical Analyser package.
 #
-
 import sys
 import argparse
-import re
 import logging
-from tkinter import N
 
 import analex
 import codeGenerator
+import symbol_table
 
 logger = logging.getLogger('anasyn')
 
@@ -29,8 +27,8 @@ LOGGING_LEVEL = logging.DEBUG
 # ['ident', 'type', @address, []]
 #
 
-identifierTable = {}
-anyVarsIDs = []    # Stores variables with unknown type
+#identifierTable = {}
+#anyVarsIDs = []    # Stores variables with unknown type#
 
 
 class AnaSynException(Exception):
@@ -44,6 +42,9 @@ class AnaSynException(Exception):
 # Syntactical Diagrams
 ########################################################################
 
+
+# Pour la table des identificateurs
+tdi = symbol_table.symbol_table()
 
 # Pour la génération de code
 # Chaque ajout de code se fera par cg.addCode("exemple de code objet")
@@ -62,7 +63,8 @@ def specifProgPrinc(lexical_analyser):
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("Name of program : "+ident)
     # key = object identity (unique)
-    identifierTable[id(ident)] = [ident, "procedure", len(identifierTable), []]
+    tdi.add_ident(ident, "procedure")
+    #identifierTable[id(ident)] = [ident, "procedure", len(identifierTable), []]
 
 
 def corpsProgPrinc(lexical_analyser):
@@ -70,7 +72,6 @@ def corpsProgPrinc(lexical_analyser):
         logger.debug("Parsing declarations")
         partieDecla(lexical_analyser)
         logger.debug("End of declarations")
-        print(identifierTable)
     lexical_analyser.acceptKeyword("begin")
 
     if not lexical_analyser.isKeyword("end"):
@@ -111,7 +112,7 @@ def declaOp(lexical_analyser):
 def procedure(lexical_analyser):
     lexical_analyser.acceptKeyword("procedure")
     ident = lexical_analyser.acceptIdentifier()
-    identifierTable[id(ident)] = [ident, "procedure", len(identifierTable), []]
+    tdi.table[id(ident)] = [ident, "procedure", len(tdi.table), []]
     logger.debug("Name of procedure : "+ident)
 
     partieFormelle(lexical_analyser)
@@ -123,7 +124,7 @@ def procedure(lexical_analyser):
 def fonction(lexical_analyser):
     lexical_analyser.acceptKeyword("function")
     ident = lexical_analyser.acceptIdentifier()
-    identifierTable[id(ident)] = [ident, "function", len(identifierTable), []]
+    tdi.table[id(ident)] = [ident, "function", len(tdi.table), []]
     logger.debug("Name of function : "+ident)
 
     partieFormelle(lexical_analyser)
@@ -185,20 +186,19 @@ def mode(lexical_analyser):
 
 def nnpType(lexical_analyser):
     # Parses types
-    for obj in identifierTable:
-        objType = identifierTable[obj][1]
+    for obj in tdi.table:
+        objType = tdi.table[obj][1]
         if objType == "any":
-            anyVarsIDs.append(obj)
-    print(anyVarsIDs)
+            tdi.any_vars_ids.append(obj)
     if lexical_analyser.isKeyword("integer"):
         lexical_analyser.acceptKeyword("integer")
         logger.debug("integer type")
-        for varID in anyVarsIDs:
-            identifierTable[varID][1] = "integer"
+        for varID in tdi.any_vars_ids:
+            tdi.table[varID][1] = "integer"
     elif lexical_analyser.isKeyword("boolean"):
         lexical_analyser.acceptKeyword("boolean")
-        for varID in anyVarsIDs:
-            identifierTable[varID][1] = "boolean"
+        for varID in tdi.any_vars_ids:
+            tdi.table[varID][1] = "boolean"
         logger.debug("boolean type")
     else:
         logger.error("Unknown type found <" +
@@ -234,7 +234,7 @@ def listeIdent(lexical_analyser):
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("identifier found: "+str(ident))
     # Add variable to the ident table, with an "any" type for now
-    identifierTable[id(ident)] = [ident, "any", len(identifierTable), []]
+    tdi.table[id(ident)] = [ident, "any", len(tdi.table), []]
     if lexical_analyser.isCharacter(","):
         lexical_analyser.acceptCharacter(",")
         n = listeIdent(lexical_analyser)+1
@@ -267,7 +267,7 @@ def instr(lexical_analyser):
         ident = lexical_analyser.acceptIdentifier()
         if lexical_analyser.isSymbol(":="):
             # affectation
-            addr = identifierTable[id(ident)][2]
+            addr = tdi.table[id(ident)][2]
             cg.addCode("empiler("+str(addr)+")      //ici")
             lexical_analyser.acceptSymbol(":=")
             expression(lexical_analyser)
@@ -475,7 +475,7 @@ def elemPrim(lexical_analyser):
         valeur(lexical_analyser)
     elif lexical_analyser.isIdentifier():
         ident = lexical_analyser.acceptIdentifier()
-        addr = identifierTable[id(ident)][2]-1
+        addr = tdi.table[id(ident)][2]-1
         cg.addCode("empiler("+str(addr)+")      //ici")
         cg.addCode("valeurPile()")
         if lexical_analyser.isCharacter("("):			# Appel fonct
@@ -530,7 +530,7 @@ def es(lexical_analyser):
         lexical_analyser.acceptKeyword("get")
         lexical_analyser.acceptCharacter("(")
         ident = lexical_analyser.acceptIdentifier()
-        addr = identifierTable[id(ident)][2]-1
+        addr = tdi.table[id(ident)][2]-1
         cg.addCode("empiler("+str(addr)+")              //ici")
         cg.addCode("get()")
         lexical_analyser.acceptCharacter(")")
@@ -653,7 +653,7 @@ def main():
 
     if args.show_ident_table:
         print("------ IDENTIFIER TABLE ------")
-        print(str(identifierTable))
+        print(str(tdi.table))
         print("------ END OF IDENTIFIER TABLE ------")
 
     if outputFilename != "":
