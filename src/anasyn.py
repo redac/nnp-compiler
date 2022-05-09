@@ -47,6 +47,7 @@ class AnaSynException(Exception):
 # Syntactical Diagrams
 ########################################################################
 
+
 # Pour la génération de code
 # Chaque ajout de code se fera par cg.addCode("exemple de code objet")
 cg = codeGenerator.CodeGenerator()
@@ -217,12 +218,11 @@ def listeDeclaVar(lexical_analyser):
     declaVar(lexical_analyser)
     if lexical_analyser.isIdentifier():
         listeDeclaVar(lexical_analyser)
-    
 
 
 def declaVar(lexical_analyser):
-    n=listeIdent(lexical_analyser) # nombre de blocks à réserver
-    logger.debug(str(n)+ " variables")
+    n = listeIdent(lexical_analyser)  # nombre de blocks à réserver
+    logger.debug(str(n) + " variables")
     lexical_analyser.acceptCharacter(":")
     logger.debug("now parsing type...")
     nnpType(lexical_analyser)
@@ -230,8 +230,10 @@ def declaVar(lexical_analyser):
     lexical_analyser.acceptCharacter(";")
 
 # La fonction renvoie le nombre d'éléments de la liste de déclaration
+
+
 def listeIdent(lexical_analyser):
-    n=1
+    n = 1
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("identifier found: "+str(ident))
     # Add variable to the ident table, with an "any" type for now
@@ -239,7 +241,7 @@ def listeIdent(lexical_analyser):
     if lexical_analyser.isCharacter(","):
         lexical_analyser.acceptCharacter(",")
         n = listeIdent(lexical_analyser)+1
-        
+
     return n
 
 
@@ -270,7 +272,7 @@ def instr(lexical_analyser):
             # affectation
             print("table \t"+str(identifierTable))
             print("ident \t"+str(id(ident)))
-            addr=identifierTable[id(ident)][2]
+            addr = identifierTable[id(ident)][2]
             cg.addCode("empiler("+str(addr)+")      //ici")
             lexical_analyser.acceptSymbol(":=")
             expression(lexical_analyser)
@@ -320,6 +322,7 @@ def exp1(lexical_analyser):
         exp2(lexical_analyser)
         cg.addCode("et()")
 
+
 def exp2(lexical_analyser):
     logger.debug("parsing exp2")
 
@@ -343,7 +346,7 @@ def exp2(lexical_analyser):
             cg.addCode("supeg()")
     elif lexical_analyser.isSymbol("=") or \
             lexical_analyser.isSymbol("/="):
-        egal= lexical_analyser.isSymbol("=")
+        egal = lexical_analyser.isSymbol("=")
         opRel(lexical_analyser)
         exp3(lexical_analyser)
         if egal:
@@ -384,20 +387,18 @@ def exp3(lexical_analyser):
     logger.debug("parsing exp3")
     exp4(lexical_analyser)
     if lexical_analyser.isCharacter("+") or lexical_analyser.isCharacter("-"):
-        moins= lexical_analyser.isCharacter("-")
+        moins = lexical_analyser.isCharacter("-")
         opAdd(lexical_analyser)
         exp4(lexical_analyser)
         if moins:
             cg.addCode("moins")
         cg.addCode("add")
-        
 
 
 def opAdd(lexical_analyser):
     logger.debug("parsing additive operator: " + lexical_analyser.get_value())
     if lexical_analyser.isCharacter("+"):
         lexical_analyser.acceptCharacter("+")
-        
 
     elif lexical_analyser.isCharacter("-"):
         lexical_analyser.acceptCharacter("-")
@@ -439,11 +440,11 @@ def opMult(lexical_analyser):
 
 def prim(lexical_analyser):
     logger.debug("parsing prim")
-    moins=False
-    non=False
+    moins = False
+    non = False
     if lexical_analyser.isCharacter("+") or lexical_analyser.isCharacter("-") or lexical_analyser.isKeyword("not"):
-        non=lexical_analyser.isCharacter("not")
-        moins=lexical_analyser.isCharacter("-")
+        non = lexical_analyser.isCharacter("not")
+        moins = lexical_analyser.isCharacter("-")
         opUnaire(lexical_analyser)
     elemPrim(lexical_analyser)
     if moins:
@@ -479,7 +480,7 @@ def elemPrim(lexical_analyser):
         valeur(lexical_analyser)
     elif lexical_analyser.isIdentifier():
         ident = lexical_analyser.acceptIdentifier()
-        addr=identifierTable[id(ident)][2]
+        addr = identifierTable[id(ident)][2]
         cg.addCode("empiler("+str(addr)+")      //ici")
         cg.addCode("valeurPile()")
         if lexical_analyser.isCharacter("("):			# Appel fonct
@@ -534,7 +535,7 @@ def es(lexical_analyser):
         lexical_analyser.acceptKeyword("get")
         lexical_analyser.acceptCharacter("(")
         ident = lexical_analyser.acceptIdentifier()
-        addr=identifierTable[id(ident)][2]
+        addr = identifierTable[id(ident)][2]
         cg.addCode("empiler("+str(addr)+")              //ici")
         cg.addCode("get()")
         lexical_analyser.acceptCharacter(")")
@@ -566,7 +567,8 @@ def boucle(lexical_analyser):
     lexical_analyser.acceptKeyword("end")
     cg.addCode("tra("+str(ad1)+"); //back to loop")
     ad2 = cg.get_instruction_counter()
-    cg.set_instruction_at_index(index_ad2,"tze("+str(ad2)+"); //loop condition (end)")
+    cg.set_instruction_at_index(
+        index_ad2, "tze("+str(ad2)+"); //loop condition (end)")
     logger.debug("end of while loop ")
 
 
@@ -577,7 +579,8 @@ def altern(lexical_analyser):
     expression(lexical_analyser)
 
     lexical_analyser.acceptKeyword("then")
-    cg.addCode("tze(ad1); //if")     # modifier ad1 pour avoir la bonne addresse
+    # modifier ad1 pour avoir la bonne addresse
+    cg.addCode("tze(ad1); //if")
     suiteInstr(lexical_analyser)
 
     if lexical_analyser.isKeyword("else"):
@@ -670,14 +673,15 @@ def main():
     # Outputs the generated code to a file
     instrIndex = 0
     while instrIndex < cg.get_instruction_counter():
-            output_file.write("%s\n" % str(cg.get_instruction_at_index(instrIndex)[1]))
-            instrIndex += 1
+        output_file.write("%s\n" % str(
+            cg.get_instruction_at_index(instrIndex)[1]))
+        instrIndex += 1
 
     if outputFilename != "":
         output_file.close()
 
     cg.affiche()
-    
+
 
 ########################################################################
 

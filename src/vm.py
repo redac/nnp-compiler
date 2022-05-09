@@ -28,12 +28,15 @@ class Pile:
             ch = "|\t" + str(x) + "\t|" + "\n" + ch
         ch = "\nEtat de la pile:\n" + ch
         return ch
+
+
 class VMException(Exception):
     def __init__(self, value):
         self.value = value
 
     def __str__(self):
         return repr(self.value)
+
 
 class virtual_machine:
 
@@ -62,23 +65,24 @@ class virtual_machine:
         print(str(val)+" empilé")
 
     def affectation(self):
-        val = self.pile.depiler()  #on récupère la valeur à affecter
-        ad = self.pile.depiler()   #on récupère l'adresse à affecter
-        #préconditions
-        if self.pointeur<ad+2:
-          raise VMException("Affectation: adresse incorrecte")
-        
+        val = self.pile.depiler()  # on récupère la valeur à affecter
+        ad = self.pile.depiler()  # on récupère l'adresse à affecter
+        # préconditions
+        if self.pointeur < ad+2:
+            raise VMException("Affectation: adresse incorrecte")
+
         temp = Pile()
-        print("adresse:" + str(ad)+ "   valeur: "+str(val))
+        print("adresse:" + str(ad) + "   valeur: "+str(val))
         print(str(self.pile))
         while len(self.pile.valeurs) != ad:
-            temp.empiler(self.pile.depiler)   #on empile toute la pile dans une pile temporaire
-        self.pile.empiler(val)      #on met la valeur à l'adresse indiquée
-        temp.depiler()    #on enlève l'ancienne valeur de la variable
-        while not temp.estVide(): 
-          self.pile.empiler(temp.depiler)  #on rempile la pile
-        self.pointeur-=2
-        print ("Valeur :"+str(val)+" affectée à l'adresse: "+str(ad))
+            # on empile toute la pile dans une pile temporaire
+            temp.empiler(self.pile.depiler)
+        self.pile.empiler(val)  # on met la valeur à l'adresse indiquée
+        temp.depiler()  # on enlève l'ancienne valeur de la variable
+        while not temp.estVide():
+            self.pile.empiler(temp.depiler)  # on rempile la pile
+        self.pointeur -= 2
+        print("Valeur :"+str(val)+" affectée à l'adresse: "+str(ad))
 
     def analyse(self, l):
 
