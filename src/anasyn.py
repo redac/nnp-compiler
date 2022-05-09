@@ -221,7 +221,7 @@ def declaVar(lexical_analyser):
     lexical_analyser.acceptCharacter(":")
     logger.debug("now parsing type...")
     nnpType(lexical_analyser)
-    cg.addCode("réserver("+str(n)+")")
+    cg.addCode("reserver("+str(n)+")")
     lexical_analyser.acceptCharacter(";")
 
 # La fonction renvoie le nombre d'éléments de la liste de déclaration
@@ -265,11 +265,7 @@ def instr(lexical_analyser):
         ident = lexical_analyser.acceptIdentifier()
         if lexical_analyser.isSymbol(":="):
             # affectation
-<<<<<<< HEAD
-            addr=identifierTable[id(ident)][2]
-=======
             addr = identifierTable[id(ident)][2]
->>>>>>> 095d1831142f81362de55ad793f422806b704b1e
             cg.addCode("empiler("+str(addr)+")      //ici")
             lexical_analyser.acceptSymbol(":=")
             expression(lexical_analyser)
@@ -577,15 +573,21 @@ def altern(lexical_analyser):
 
     lexical_analyser.acceptKeyword("then")
     # modifier ad1 pour avoir la bonne addresse
-    cg.addCode("tze(ad1); //if")
+    index_ad1 = cg.get_instruction_counter()
+    cg.addCode("tze(ad1); //ne doit pas apparaitre")
     suiteInstr(lexical_analyser)
 
     if lexical_analyser.isKeyword("else"):
         lexical_analyser.acceptKeyword("else")
-        cg.addCode("tra(ad2); //else")
+        index_ad2 = cg.get_instruction_counter()
+        cg.addCode("tra(ad2); //ne doit pas apparaitre")
+        ad1 = cg.get_instruction_counter()
+        cg.set_instruction_at_index(index_ad1, "tze("+str(ad1)+"); //if")
         suiteInstr(lexical_analyser)
 
     lexical_analyser.acceptKeyword("end")
+    ad2 = cg.get_instruction_counter()
+    cg.set_instruction_at_index(index_ad2, "tra("+str(ad2)+"); // else")
     logger.debug("end of if")
 
 
@@ -671,20 +673,15 @@ def main():
     instrIndex = 0
     while instrIndex < cg.get_instruction_counter():
         output_file.write("%s\n" % str(
-            cg.get_instruction_at_index(instrIndex)[1]))
+            cg.get_instruction_at_index(instrIndex)))
         instrIndex += 1
 
     if outputFilename != "":
         output_file.close()
 
-<<<<<<< HEAD
     #print("\n\n")
     #cg.affiche()
     
-=======
-    cg.affiche()
-
->>>>>>> 095d1831142f81362de55ad793f422806b704b1e
 
 ########################################################################
 
