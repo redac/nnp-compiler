@@ -266,15 +266,9 @@ def instr(lexical_analyser):
         ident = lexical_analyser.acceptIdentifier()
         if lexical_analyser.isSymbol(":="):
             # affectation
-<<<<<<< HEAD
-            print(identifierTable)
-            addr = identifierTable[id(ident)][2]
-            cg.addCode("empiler(ad("+str(addr)+")") #à changer
-=======
+            print(str(identifierTable))
             addr=identifierTable[id(ident)][2]
             cg.addCode("empiler("+str(addr)+")      //ici")
-            
->>>>>>> 3a28b2025befa62555f4d8838ec70180b7eb7495
             lexical_analyser.acceptSymbol(":=")
             expression(lexical_analyser)
             cg.addCode("affectation()")
