@@ -21,8 +21,8 @@ class CodeGenerator:
 		return self.generatedCode[instrIndex]
 	
 	def set_instruction_at_index(self, instrIndex, instr):
-		self.generatedCode[instrIndex] = instr
+		self.generatedCode[instrIndex] = (instrIndex,instr)
 
 	def affiche(self):
 		for i in range(self.instrIndex):
-			print(self.generatedCode[i][1])
+			print(self.generatedCode[i][0],"\t",self.generatedCode[i][1])

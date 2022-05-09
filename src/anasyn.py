@@ -72,7 +72,6 @@ def corpsProgPrinc(lexical_analyser):
         logger.debug("Parsing declarations")
         partieDecla(lexical_analyser)
         logger.debug("End of declarations")
-        print(identifierTable)
     lexical_analyser.acceptKeyword("begin")
 
     if not lexical_analyser.isKeyword("end"):
@@ -191,7 +190,6 @@ def nnpType(lexical_analyser):
         objType = identifierTable[obj][1]
         if objType == "any":
             anyVarsIDs.append(obj)
-    print(anyVarsIDs)
     if lexical_analyser.isKeyword("integer"):
         lexical_analyser.acceptKeyword("integer")
         logger.debug("integer type")
@@ -268,8 +266,6 @@ def instr(lexical_analyser):
         ident = lexical_analyser.acceptIdentifier()
         if lexical_analyser.isSymbol(":="):
             # affectation
-            print("table \t"+str(identifierTable))
-            print("ident \t"+str(id(ident)))
             addr=identifierTable[id(ident)][2]
             cg.addCode("empiler("+str(addr)+")      //ici")
             lexical_analyser.acceptSymbol(":=")
@@ -560,7 +556,7 @@ def boucle(lexical_analyser):
 
     lexical_analyser.acceptKeyword("loop")
     cg.addCode("tze(ad2); //doit pas apparaitre, remplacer avec ad2")
-    index_ad2 = cg.get_instruction_counter()
+    index_ad2 = cg.get_instruction_counter()-1
     suiteInstr(lexical_analyser)
 
     lexical_analyser.acceptKeyword("end")
@@ -676,7 +672,8 @@ def main():
     if outputFilename != "":
         output_file.close()
 
-    cg.affiche()
+    #print("\n\n")
+    #cg.affiche()
     
 
 ########################################################################
