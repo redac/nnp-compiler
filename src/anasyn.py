@@ -267,7 +267,7 @@ def instr(lexical_analyser):
         ident = lexical_analyser.acceptIdentifier()
         if lexical_analyser.isSymbol(":="):
             # affectation
-            addr=identifierTable[id(ident)][2]
+            addr=identifierTable[id(ident)][2]-1
             cg.addCode("empiler("+str(addr)+")      //ici")
             
             lexical_analyser.acceptSymbol(":=")
@@ -386,8 +386,8 @@ def exp3(lexical_analyser):
         opAdd(lexical_analyser)
         exp4(lexical_analyser)
         if moins:
-            cg.addCode("moins")
-        cg.addCode("add")
+            cg.addCode("moins()")
+        cg.addCode("add()")
         
 
 
@@ -415,9 +415,9 @@ def exp4(lexical_analyser):
         opMult(lexical_analyser)
         prim(lexical_analyser)
         if fois:
-            cg.addCode("mult")
+            cg.addCode("mult()")
         else:
-            cg.addCode("div")
+            cg.addCode("div()")
 
 
 def opMult(lexical_analyser):
@@ -477,7 +477,7 @@ def elemPrim(lexical_analyser):
         valeur(lexical_analyser)
     elif lexical_analyser.isIdentifier():
         ident = lexical_analyser.acceptIdentifier()
-        addr=identifierTable[id(ident)][2]
+        addr=identifierTable[id(ident)][2]-1
         cg.addCode("empiler("+str(addr)+")      //ici")
         cg.addCode("valeurPile()")
         if lexical_analyser.isCharacter("("):			# Appel fonct
@@ -532,7 +532,7 @@ def es(lexical_analyser):
         lexical_analyser.acceptKeyword("get")
         lexical_analyser.acceptCharacter("(")
         ident = lexical_analyser.acceptIdentifier()
-        addr=identifierTable[id(ident)][2]
+        addr=identifierTable[id(ident)][2]-1
         cg.addCode("empiler("+str(addr)+")              //ici")
         cg.addCode("get()")
         lexical_analyser.acceptCharacter(")")
