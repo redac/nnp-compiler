@@ -4,9 +4,6 @@
 # Syntactical Analyser package.
 #
 
-from ast import While
-from hashlib import new
-from operator import le
 import sys
 import argparse
 import re
