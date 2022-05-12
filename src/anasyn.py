@@ -537,7 +537,10 @@ def es(lexical_analyser):
         for ide in identifierTable:
                 if ident==identifierTable[ide][0]:
                     addr=identifierTable[ide][2]-1
+                    if identifierTable[ide][1]!="integer":
+                        raise AnaSynException("Wrong type for get: not an integer")
         # addr = identifierTable[id(ident)][2]-1
+        
         cg.addCode("empiler("+str(addr)+")              //ici")
         cg.addCode("get()")
         lexical_analyser.acceptCharacter(")")
@@ -545,6 +548,12 @@ def es(lexical_analyser):
     elif lexical_analyser.isKeyword("put"):
         lexical_analyser.acceptKeyword("put")
         lexical_analyser.acceptCharacter("(")
+        ident = lexical_analyser.get_value()
+        for ide in identifierTable:
+                if ident==identifierTable[ide][0]:
+                    addr=identifierTable[ide][2]-1
+                    if identifierTable[ide][1]!="integer":
+                        raise AnaSynException("Wrong type for put: not an integer")
         expression(lexical_analyser)
         cg.addCode("put()")
         lexical_analyser.acceptCharacter(")")
