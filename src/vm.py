@@ -85,14 +85,12 @@ class virtual_machine:
             raise VMException("Affectation: pile vide")
         val = self.depiler()  # on récupère la valeur à affecter
         ad = self.depiler()  # on récupère l'adresse à affecter
-        logger.debug(str(self.pile))
         logger.debug("Pointeur: "+str(self.pointeur))
         logger.debug("Valeur "+str(val)+" affectée à l'adresse "+str(ad))
         # précondition
         if self.pointeur < ad:
             raise VMException("Affectation: adresse incorrecte")
         self.pile.valeurs[ad] = val
-        logger.debug(str(self.pile))
 
     def valeurPile(self):
         # précondition
@@ -279,8 +277,8 @@ class virtual_machine:
 
     def tze(self,ad):
         if len(self.po) < ad or 0 > ad :
-            raise VMException("TZE: adresse incorrecte")
-        if self.pile.estVide:
+            raise VMException("TZE: adresse incorrecte :"+str(ad))
+        if self.pile.estVide():
             raise VMException("TZE: pile vide")
         #si faux en sommet de pile
         if not self.depiler():
@@ -297,6 +295,7 @@ class virtual_machine:
         
 
     def analyse(self, l):
+        logger.debug(str(l))
         if l == "debutProg();":
             self.init_analyser()
         elif reg_reserver.match(l):
@@ -337,6 +336,8 @@ class virtual_machine:
             self.get()
         elif l == "put()":
             self.put()
+        elif l == "non()":
+            self.non()
         elif reg_tze.match(l):
             self.tze(int(reg_tze.match(l).group(1)))
         elif reg_tra.match(l):
@@ -345,7 +346,7 @@ class virtual_machine:
             self.erreur(reg_erreur.match(l).group(1))
         logger.debug("pointeur:  "+str(self.pointeur))
         logger.debug(str(self.pile))
-        logger.debug(l)
+        
 
 
 def main():
