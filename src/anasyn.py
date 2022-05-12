@@ -606,6 +606,9 @@ def boucle(lexical_analyser):
     logger.debug("parsing while loop: ")
     lexical_analyser.acceptKeyword("while")
     ad1 = cg.get_instruction_counter()
+    a = lexical_analyser.get_value()
+    if not is_boolean(a):
+        raise AnaSynException("TypeError: while requires a boolean")
 
     expression(lexical_analyser)
 
@@ -625,7 +628,9 @@ def boucle(lexical_analyser):
 def altern(lexical_analyser):
     logger.debug("parsing if: ")
     lexical_analyser.acceptKeyword("if")
-
+    a = lexical_analyser.get_value()
+    if not is_boolean(a):
+        raise AnaSynException("TypeError: if requires a boolean")
     expression(lexical_analyser)
 
     lexical_analyser.acceptKeyword("then")
