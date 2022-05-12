@@ -62,7 +62,7 @@ class virtual_machine:
     def reserver(self, n):
         if n >= 0:
             for i in range(n):
-                self.empiler(-1)
+                self.empiler(None)
             logger.debug(str(n)+" emplacement(s) réservés")
         else:
             raise VMException(
