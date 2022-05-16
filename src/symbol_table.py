@@ -29,6 +29,11 @@ class symbol_table:
     def get_address(self, ident):
         return self.table[id(ident)][2]
 
+    def get_address_var(self, ident):
+        if self.get_type(ident) in {"function", "procedure"}:
+            return "Ident is NOT a variable"
+        return self.table[id(ident)][2]-1
+
     def get_type(self, ident):
         return self.table[id(ident)][1]
 

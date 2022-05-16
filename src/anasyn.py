@@ -45,12 +45,10 @@ def program(lexical_analyser):
 
 
 def specifProgPrinc(lexical_analyser):
+    # Intentionally not adding the first procedure to the symbol table
     lexical_analyser.acceptKeyword("procedure")
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("Name of program : "+ident)
-    # key = object identity (unique)
-    tdi.add_ident(ident, "procedure")
-    #identifierTable[id(ident)] = [ident, "procedure", len(identifierTable), []]
 
 
 def corpsProgPrinc(lexical_analyser):
@@ -98,7 +96,8 @@ def declaOp(lexical_analyser):
 def procedure(lexical_analyser):
     lexical_analyser.acceptKeyword("procedure")
     ident = lexical_analyser.acceptIdentifier()
-    tdi.table[id(ident)] = [ident, "procedure", len(tdi.table), []]
+    # Add procedure to symbol table
+    tdi.add_ident(ident, "procedure")
     logger.debug("Name of procedure : "+ident)
 
     partieFormelle(lexical_analyser)
@@ -110,7 +109,8 @@ def procedure(lexical_analyser):
 def fonction(lexical_analyser):
     lexical_analyser.acceptKeyword("function")
     ident = lexical_analyser.acceptIdentifier()
-    tdi.table[id(ident)] = [ident, "function", len(tdi.table), []]
+    # Add function to symbol table
+    tdi.add_ident(ident, "function")
     logger.debug("Name of function : "+ident)
 
     partieFormelle(lexical_analyser)
@@ -220,7 +220,7 @@ def listeIdent(lexical_analyser):
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("identifier found: "+str(ident))
     # Add variable to the ident table, with an "any" type for now
-    tdi.table[id(ident)] = [ident, "any", len(tdi.table), []]
+    tdi.add_ident(ident, "any")
     if lexical_analyser.isCharacter(","):
         lexical_analyser.acceptCharacter(",")
         n = listeIdent(lexical_analyser)+1
@@ -254,12 +254,13 @@ def instr(lexical_analyser):
         ident = lexical_analyser.acceptIdentifier()
         if lexical_analyser.isSymbol(":="):
             # affectation
-            addr = tdi.table[id(ident)][2]
+            addr = tdi.get_address(ident)
             cg.addCode("empiler("+str(addr)+")      //ici")
             lexical_analyser.acceptSymbol(":=")
             a2 = lexical_analyser.get_value()
             if not ((is_integer(a1) and is_integer(a2)) or (is_boolean(a1) and is_boolean(a2))):
-                raise AnaSynException("TypeError: affectation requires same type")
+                raise AnaSynException(
+                    "TypeError: affectation requires same type")
             expression(lexical_analyser)
             cg.addCode("affectation()")
             logger.debug("parsed affectation")
@@ -299,7 +300,7 @@ def expression(lexical_analyser):
         exp1(lexical_analyser)
         cg.addCode("ou()")
         if (not is_boolean(a1)) or (not is_boolean(a2)):
-                raise AnaSynException("TypeError: ou() requires booleans")
+            raise AnaSynException("TypeError: ou() requires booleans")
 
 
 def exp1(lexical_analyser):
@@ -312,7 +313,7 @@ def exp1(lexical_analyser):
         exp2(lexical_analyser)
         cg.addCode("et()")
         if (not is_boolean(a1)) or (not is_boolean(a2)):
-                raise AnaSynException("TypeError: et() requires booleans")
+            raise AnaSynException("TypeError: et() requires booleans")
 
 
 def exp2(lexical_analyser):
@@ -330,7 +331,7 @@ def exp2(lexical_analyser):
         a2 = lexical_analyser.get_value()
         exp3(lexical_analyser)
         if (not is_integer(a1)) or (not is_integer(a2)):
-                raise AnaSynException("TypeError: comparison requires integers")
+            raise AnaSynException("TypeError: comparison requires integers")
         if infeg:
             cg.addCode("infeg()")
         elif inf:
@@ -340,7 +341,7 @@ def exp2(lexical_analyser):
         else:
             cg.addCode("supeg()")
     elif lexical_analyser.isSymbol("=") or \
-            lexical_analyser.isSymbol("/="):     ### est ce qu'on peut comparer l'égalité de 2 booléens?
+            lexical_analyser.isSymbol("/="):  # est ce qu'on peut comparer l'égalité de 2 booléens?
         egal = lexical_analyser.isSymbol("=")
         opRel(lexical_analyser)
         exp3(lexical_analyser)
@@ -391,7 +392,7 @@ def exp3(lexical_analyser):
             cg.addCode("sous()")
             if (not is_integer(a1)) or (not is_integer(a2)):
                 raise AnaSynException("TypeError: sous() requires integers")
-            
+
         else:
             cg.addCode("add()")
             if (not is_integer(a1)) or (not is_integer(a2)):
@@ -471,7 +472,6 @@ def prim(lexical_analyser):
             raise AnaSynException("TypeError: plus() requires a integer")
 
 
-
 def opUnaire(lexical_analyser):
     logger.debug("parsing unary operator: " + lexical_analyser.get_value())
     if lexical_analyser.isCharacter("+"):
@@ -499,7 +499,7 @@ def elemPrim(lexical_analyser):
         valeur(lexical_analyser)
     elif lexical_analyser.isIdentifier():
         ident = lexical_analyser.acceptIdentifier()
-        addr = tdi.table[id(ident)][2]-1
+        addr = tdi.get_address(ident)
         cg.addCode("empiler("+str(addr)+")      //ici")
         cg.addCode("valeurPile()")
         if lexical_analyser.isCharacter("("):			# Appel fonct
@@ -554,7 +554,7 @@ def es(lexical_analyser):
         lexical_analyser.acceptKeyword("get")
         lexical_analyser.acceptCharacter("(")
         ident = lexical_analyser.acceptIdentifier()
-        addr = tdi.table[id(ident)][2]-1
+        addr = tdi.get_address(ident)
         cg.addCode("empiler("+str(addr)+")              //ici")
         cg.addCode("get()")
         lexical_analyser.acceptCharacter(")")
@@ -563,11 +563,6 @@ def es(lexical_analyser):
         lexical_analyser.acceptKeyword("put")
         lexical_analyser.acceptCharacter("(")
         ident = lexical_analyser.get_value()
-        for ide in identifierTable:
-                if ident==identifierTable[ide][0]:
-                    addr=identifierTable[ide][2]-1
-                    if identifierTable[ide][1]!="integer":
-                        raise AnaSynException("TypeError: put() requires integers")
         if not is_integer(ident):
             raise AnaSynException("TypeError: put() requires integers")
         expression(lexical_analyser)
@@ -584,6 +579,8 @@ def boucle(lexical_analyser):
     lexical_analyser.acceptKeyword("while")
     ad1 = cg.get_instruction_counter()
     a = lexical_analyser.get_value()
+    print(is_boolean(a))
+    print(a)
     if not is_boolean(a):
         raise AnaSynException("TypeError: while requires a boolean")
 
@@ -615,7 +612,7 @@ def altern(lexical_analyser):
     index_ad1 = cg.get_instruction_counter()
     cg.addCode("tze(ad1); //ne doit pas apparaitre")
     suiteInstr(lexical_analyser)
-    index_ad2=None
+    index_ad2 = None
 
     if lexical_analyser.isKeyword("else"):
         lexical_analyser.acceptKeyword("else")
@@ -628,8 +625,8 @@ def altern(lexical_analyser):
     lexical_analyser.acceptKeyword("end")
     ad2 = cg.get_instruction_counter()
     instr = "tra"
-    if index_ad2==None:        #Si if sans else
-        index_ad2=index_ad1
+    if index_ad2 == None:  # Si if sans else
+        index_ad2 = index_ad1
         instr = "tze"
     cg.set_instruction_at_index(index_ad2, instr+"("+str(ad2)+"); // if")
     logger.debug("end of if")
@@ -640,19 +637,14 @@ def retour(lexical_analyser):
     lexical_analyser.acceptKeyword("return")
     expression(lexical_analyser)
 
+
 def is_boolean(b):
-    type_bool=False
-    for ide in identifierTable:
-                if b==identifierTable[ide][0]:
-                    type_bool= identifierTable[ide][1]=="boolean"
-    return b in {"true","false"} or type_bool
+    return b in {"true", "false"} or tdi.get_type(b) == "boolean"
+
 
 def is_integer(i):
-    type_int=False
-    for ide in identifierTable:
-                if i==identifierTable[ide][0]:
-                    type_int= identifierTable[ide][1]=="integer"
-    return isinstance(i,int) or type_int
+
+    return isinstance(i, int) or tdi.get_type(i) == "integer"
 
 ########################################################################
 
@@ -739,7 +731,7 @@ def main():
 
     # print("\n\n")
     # cg.affiche()
-    
+
 
 ########################################################################
 
