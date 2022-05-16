@@ -7,7 +7,7 @@
 # various entities such as variable and function names, classes, objects, etc.
 #
 # key = object identity (unique) by calling the python function id
-# table[id] = ['ident', 'type', @address, [return types if its a function]]
+# table[id] = ['ident', 'type', @address, [[(if function) param1, param2, ...)],returnType]]
 
 import string
 
@@ -23,7 +23,7 @@ class symbol_table:
     ########### Méthodes ###########
 
     def add_ident(self, ident: string, type: string):
-        self.table[id(ident)] = [ident, type, len(self.table), []]
+        self.table[id(ident)] = [ident, type, len(self.table), [[]]]
         self.object_index += 1
 
     def get_address(self, ident):
