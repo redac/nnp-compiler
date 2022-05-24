@@ -4,6 +4,7 @@
 # Syntactical Analyser package.
 #
 
+from statistics import variance
 import sys
 import argparse
 import re
@@ -193,10 +194,13 @@ def nnpType(lexical_analyser):
         logger.debug("integer type")
         for varID in anyVarsIDs:
             identifierTable[varID][1] = "integer"
+        anyVarsIDs[:]=[]
     elif lexical_analyser.isKeyword("boolean"):
         lexical_analyser.acceptKeyword("boolean")
         for varID in anyVarsIDs:
             identifierTable[varID][1] = "boolean"
+            anyVarsIDs.remove(varID)
+        anyVarsIDs[:]=[]
         logger.debug("boolean type")
     else:
         logger.error("Unknown type found <" +
@@ -262,20 +266,19 @@ def instr(lexical_analyser):
     elif lexical_analyser.isKeyword("return"):
         retour(lexical_analyser)
     elif lexical_analyser.isIdentifier():
-        a1 = lexical_analyser.get_value()
         ident = lexical_analyser.acceptIdentifier()
         if lexical_analyser.isSymbol(":="):
             # affectation
+            t1= None
             for ide in identifierTable:
                 if ident==identifierTable[ide][0]:
                     addr=identifierTable[ide][2]-1
-            # addr = identifierTable[id(ident)][2]-1
+                    t1 = identifierTable[ide][1]
             cg.addCode("empiler("+str(addr)+")      //ici")
             lexical_analyser.acceptSymbol(":=")
-            a2 = lexical_analyser.get_value()
-            if not ((is_integer(a1) and is_integer(a2)) or (is_boolean(a1) and is_boolean(a2))):
-                raise AnaSynException("TypeError: affectation requires same type")
-            expression(lexical_analyser)
+            t2=expression(lexical_analyser)
+            if t1 != t2:
+                raise AnaSynException("TypeError: := requires 2 arguments of same type")
             cg.addCode("affectation()")
             logger.debug("parsed affectation")
         elif lexical_analyser.isCharacter("("):
@@ -305,35 +308,33 @@ def listePe(lexical_analyser):
 
 def expression(lexical_analyser):
     logger.debug("parsing expression: " + str(lexical_analyser.get_value()))
-
-    a1 = lexical_analyser.get_value()
-    exp1(lexical_analyser)
+    t1=exp1(lexical_analyser)
     if lexical_analyser.isKeyword("or"):
         lexical_analyser.acceptKeyword("or")
-        a2 = lexical_analyser.get_value()
-        exp1(lexical_analyser)
+        t2=exp1(lexical_analyser)
         cg.addCode("ou()")
-        if (not is_boolean(a1)) or (not is_boolean(a2)):
-                raise AnaSynException("TypeError: ou() requires booleans")
+        # type check
+        if t1 != "boolean" or t2 != "boolean":
+            raise AnaSynException("TypeError: ou requires booleans")
+    return t1
 
 
 def exp1(lexical_analyser):
     logger.debug("parsing exp1")
-    a1 = lexical_analyser.get_value()
-    exp2(lexical_analyser)
+    t1=exp2(lexical_analyser)
     if lexical_analyser.isKeyword("and"):
         lexical_analyser.acceptKeyword("and")
-        a2 = lexical_analyser.get_value()
-        exp2(lexical_analyser)
+        t2=exp2(lexical_analyser)
+        # type check
+        if t1 != "boolean" or t2 != "boolean":
+            raise AnaSynException("TypeError: et requires booleans")
         cg.addCode("et()")
-        if (not is_boolean(a1)) or (not is_boolean(a2)):
-                raise AnaSynException("TypeError: et() requires booleans")
+    return t1
 
 
 def exp2(lexical_analyser):
     logger.debug("parsing exp2")
-    a1 = lexical_analyser.get_value()
-    exp3(lexical_analyser)
+    t1=exp3(lexical_analyser)
     if lexical_analyser.isSymbol("<") or \
             lexical_analyser.isSymbol("<=") or \
             lexical_analyser.isSymbol(">") or \
@@ -342,10 +343,17 @@ def exp2(lexical_analyser):
         inf = lexical_analyser.isSymbol("<")
         sup = lexical_analyser.isSymbol(">")
         opRel(lexical_analyser)
-        a2 = lexical_analyser.get_value()
-        exp3(lexical_analyser)
-        if (not is_integer(a1)) or (not is_integer(a2)):
-                raise AnaSynException("TypeError: comparison requires integers")
+        t2=exp3(lexical_analyser)
+        # type check
+        if t1 != "integer" or t2 != "integer":
+            if infeg:
+                raise AnaSynException("TypeError: <= requires integers")
+            elif inf:
+                raise AnaSynException("TypeError: < requires integers")
+            elif sup:
+                raise AnaSynException("TypeError: > requires integers")
+            else:
+                raise AnaSynException("TypeError: >= requires integers")
         if infeg:
             cg.addCode("infeg()")
         elif inf:
@@ -354,15 +362,24 @@ def exp2(lexical_analyser):
             cg.addCode("sup()")
         else:
             cg.addCode("supeg()")
+        return "boolean"
     elif lexical_analyser.isSymbol("=") or \
-            lexical_analyser.isSymbol("/="):     ### est ce qu'on peut comparer l'égalité de 2 booléens?
+            lexical_analyser.isSymbol("/="):
         egal = lexical_analyser.isSymbol("=")
         opRel(lexical_analyser)
-        exp3(lexical_analyser)
+        t2=exp3(lexical_analyser)
+        # type check
+        if t1 != t2:
+            if egal:
+                raise AnaSynException("TypeError: = requires 2 arguments of same type")
+            else:
+                raise AnaSynException("TypeError: /= requires 2 arguments of same type")
         if egal:
             cg.addCode("egal()")
         else:
             cg.addCode("diff()")
+        return "boolean"
+    return t1
 
 
 def opRel(lexical_analyser):
@@ -395,22 +412,23 @@ def opRel(lexical_analyser):
 
 def exp3(lexical_analyser):
     logger.debug("parsing exp3")
-    a1 = lexical_analyser.get_value()
-    exp4(lexical_analyser)
+    t1=exp4(lexical_analyser)
     if lexical_analyser.isCharacter("+") or lexical_analyser.isCharacter("-"):
         moins = lexical_analyser.isCharacter("-")
         opAdd(lexical_analyser)
-        a2 = lexical_analyser.get_value()
-        exp4(lexical_analyser)
+        t2=exp4(lexical_analyser)
+        # type check
+        if t1 != "integer" or t2 != "integer":
+            if moins:
+                raise AnaSynException("TypeError: sous() requires integers")
+            else:
+                raise AnaSynException("TypeError: add() requires integers")
         if moins:
             cg.addCode("sous()")
-            if (not is_integer(a1)) or (not is_integer(a2)):
-                raise AnaSynException("TypeError: sous() requires integers")
             
         else:
             cg.addCode("add()")
-            if (not is_integer(a1)) or (not is_integer(a2)):
-                raise AnaSynException("TypeError: add() requires integers")
+    return t1
 
 
 def opAdd(lexical_analyser):
@@ -429,21 +447,22 @@ def opAdd(lexical_analyser):
 
 def exp4(lexical_analyser):
     logger.debug("parsing exp4")
-    a1 = lexical_analyser.get_value()
-    prim(lexical_analyser)
+    t1=prim(lexical_analyser)
     if lexical_analyser.isCharacter("*") or lexical_analyser.isCharacter("/"):
         fois = lexical_analyser.isCharacter("*")
         opMult(lexical_analyser)
-        a2 = lexical_analyser.get_value()
-        prim(lexical_analyser)
+        t2=prim(lexical_analyser)
+        # type check
+        if t1 != "integer" or t2 != "integer":
+            if fois:
+                raise AnaSynException("TypeError: mult() requires integers")
+            else:
+                raise AnaSynException("TypeError: div() requires integers")
         if fois:
             cg.addCode("mult()")
-            if (not is_integer(a1)) or (not is_integer(a2)):
-                raise AnaSynException("TypeError: mult() requires integers")
         else:
             cg.addCode("div()")
-            if (not is_integer(a1)) or (not is_integer(a2)):
-                raise AnaSynException("TypeError: div() requires integers")
+    return t1
 
 
 def opMult(lexical_analyser):
@@ -466,37 +485,41 @@ def prim(lexical_analyser):
     moins = False
     non = False
     plus = False
+    t1=None
     if lexical_analyser.isCharacter("+") or lexical_analyser.isCharacter("-") or lexical_analyser.isKeyword("not"):
         moins = lexical_analyser.isCharacter("-")
         non = lexical_analyser.isKeyword("not")
         plus = lexical_analyser.isCharacter("+")
         a = lexical_analyser.get_value()
-        opUnaire(lexical_analyser)
-    elemPrim(lexical_analyser)
-    if non:
-        if not is_boolean(a):
+        t1=opUnaire(lexical_analyser)
+    t2=elemPrim(lexical_analyser)
+    if t1 != t2:
+        if non:
             raise AnaSynException("TypeError: non() requires a boolean")
+        elif moins:
+            raise AnaSynException("TypeError: moins() requires an integer")
+        elif plus:
+            raise AnaSynException("TypeError: plus() require an integer")
+    elif non:
         cg.addCode("non()")
     elif moins:
-        if not is_integer(a):
-            raise AnaSynException("TypeError: moins() requires a integer")
         cg.addCode("moins()")
-    elif plus:
-        if not is_integer(a):
-            raise AnaSynException("TypeError: plus() requires a integer")
-
+    return t2
 
 
 def opUnaire(lexical_analyser):
     logger.debug("parsing unary operator: " + lexical_analyser.get_value())
     if lexical_analyser.isCharacter("+"):
         lexical_analyser.acceptCharacter("+")
+        return "integer"
 
     elif lexical_analyser.isCharacter("-"):
         lexical_analyser.acceptCharacter("-")
+        return "integer"
 
     elif lexical_analyser.isKeyword("not"):
         lexical_analyser.acceptKeyword("not")
+        return "boolean"
 
     else:
         msg = "Unknown additive operator <" + lexical_analyser.get_value() + ">!"
@@ -508,16 +531,18 @@ def elemPrim(lexical_analyser):
     logger.debug("parsing elemPrim: " + str(lexical_analyser.get_value()))
     if lexical_analyser.isCharacter("("):
         lexical_analyser.acceptCharacter("(")
-        expression(lexical_analyser)
+        type= expression(lexical_analyser)
         lexical_analyser.acceptCharacter(")")
+        return type
     elif lexical_analyser.isInteger() or lexical_analyser.isKeyword("true") or lexical_analyser.isKeyword("false"):
-        valeur(lexical_analyser)
+        return valeur(lexical_analyser)
     elif lexical_analyser.isIdentifier():
         ident = lexical_analyser.acceptIdentifier()
+        type= None
         for ide in identifierTable:
                 if ident==identifierTable[ide][0]:
                     addr=identifierTable[ide][2]-1
-        # addr = identifierTable[id(ident)][2]-1
+                    type = identifierTable[ide][1]
         cg.addCode("empiler("+str(addr)+")      //ici")
         cg.addCode("valeurPile()")
         if lexical_analyser.isCharacter("("):			# Appel fonct
@@ -532,6 +557,7 @@ def elemPrim(lexical_analyser):
         else:
             logger.debug("Use of an identifier as an expression: " + ident)
             # ...
+        return type
     else:
         logger.error("Unknown Value!")
         raise AnaSynException("Unknown Value!")
@@ -572,12 +598,14 @@ def es(lexical_analyser):
         lexical_analyser.acceptKeyword("get")
         lexical_analyser.acceptCharacter("(")
         ident = lexical_analyser.acceptIdentifier()
+        type = None
         for ide in identifierTable:
                 if ident==identifierTable[ide][0]:
                     addr=identifierTable[ide][2]-1
-        # addr = identifierTable[id(ident)][2]-1
-        if not is_integer(ident):
-            raise AnaSynException("TypeError: get() requires integers")
+                    type = identifierTable[ide][1]
+        # type check
+        if type != "integer":
+            raise AnaSynException("TypeError: get() requires an integer")
         cg.addCode("empiler("+str(addr)+")              //ici")
         cg.addCode("get()")
         lexical_analyser.acceptCharacter(")")
@@ -586,14 +614,10 @@ def es(lexical_analyser):
         lexical_analyser.acceptKeyword("put")
         lexical_analyser.acceptCharacter("(")
         ident = lexical_analyser.get_value()
-        for ide in identifierTable:
-                if ident==identifierTable[ide][0]:
-                    addr=identifierTable[ide][2]-1
-                    if identifierTable[ide][1]!="integer":
-                        raise AnaSynException("TypeError: put() requires integers")
-        if not is_integer(ident):
-            raise AnaSynException("TypeError: put() requires integers")
-        expression(lexical_analyser)
+        type=expression(lexical_analyser)
+        # type check
+        if type != "integer":
+            raise AnaSynException("TypeError: put() requires an integer")
         cg.addCode("put()")
         lexical_analyser.acceptCharacter(")")
         logger.debug("Call to put")
@@ -607,8 +631,8 @@ def boucle(lexical_analyser):
     lexical_analyser.acceptKeyword("while")
     ad1 = cg.get_instruction_counter()
     a = lexical_analyser.get_value()
-    if not is_boolean(a):
-        raise AnaSynException("TypeError: while requires a boolean")
+    # if not is_boolean(a):
+    #     raise AnaSynException("TypeError: while requires a boolean")
 
     expression(lexical_analyser)
 
@@ -628,10 +652,9 @@ def boucle(lexical_analyser):
 def altern(lexical_analyser):
     logger.debug("parsing if: ")
     lexical_analyser.acceptKeyword("if")
-    a = lexical_analyser.get_value()
-    if not is_boolean(a):
+    t=expression(lexical_analyser)
+    if t!="boolean":
         raise AnaSynException("TypeError: if requires a boolean")
-    expression(lexical_analyser)
 
     lexical_analyser.acceptKeyword("then")
     # modifier ad1 pour avoir la bonne addresse
@@ -662,20 +685,6 @@ def retour(lexical_analyser):
     logger.debug("parsing return instruction")
     lexical_analyser.acceptKeyword("return")
     expression(lexical_analyser)
-
-def is_boolean(b):
-    type_bool=False
-    for ide in identifierTable:
-                if b==identifierTable[ide][0]:
-                    type_bool= identifierTable[ide][1]=="boolean"
-    return b in {"true","false"} or type_bool
-
-def is_integer(i):
-    type_int=False
-    for ide in identifierTable:
-                if i==identifierTable[ide][0]:
-                    type_int= identifierTable[ide][1]=="integer"
-    return isinstance(i,int) or type_int
 
 ########################################################################
 
