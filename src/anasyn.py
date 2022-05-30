@@ -11,6 +11,8 @@ import re
 import logging
 from tkinter import N
 
+from sqlalchemy import false, true
+
 import analex
 import codeGenerator
 
@@ -49,6 +51,7 @@ class AnaSynException(Exception):
 # Pour la génération de code
 # Chaque ajout de code se fera par cg.addCode("exemple de code objet")
 cg = codeGenerator.CodeGenerator()
+variable_global=false
 
 
 def program(lexical_analyser):
@@ -63,13 +66,15 @@ def specifProgPrinc(lexical_analyser):
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("Name of program : "+ident)
     # key = object identity (unique)
-    identifierTable[id(ident)] = [ident, "procedure", len(identifierTable), []]
+    # identifierTable[id(ident)] = [ident, "procedure", len(identifierTable), []]
 
 
 def corpsProgPrinc(lexical_analyser):
     if not lexical_analyser.isKeyword("begin"):
         logger.debug("Parsing declarations")
+        variable_global=true
         partieDecla(lexical_analyser)
+        variable_global=false
         logger.debug("End of declarations")
     lexical_analyser.acceptKeyword("begin")
 
@@ -272,7 +277,7 @@ def instr(lexical_analyser):
             t1= None
             for ide in identifierTable:
                 if ident==identifierTable[ide][0]:
-                    addr=identifierTable[ide][2]-1
+                    addr=identifierTable[ide][2]
                     t1 = identifierTable[ide][1]
             cg.addCode("empiler("+str(addr)+")      //ici")
             lexical_analyser.acceptSymbol(":=")
@@ -541,7 +546,7 @@ def elemPrim(lexical_analyser):
         type= None
         for ide in identifierTable:
                 if ident==identifierTable[ide][0]:
-                    addr=identifierTable[ide][2]-1
+                    addr=identifierTable[ide][2]
                     type = identifierTable[ide][1]
         cg.addCode("empiler("+str(addr)+")      //ici")
         cg.addCode("valeurPile()")
@@ -601,7 +606,7 @@ def es(lexical_analyser):
         type = None
         for ide in identifierTable:
                 if ident==identifierTable[ide][0]:
-                    addr=identifierTable[ide][2]-1
+                    addr=identifierTable[ide][2]
                     type = identifierTable[ide][1]
         # type check
         if type != "integer":

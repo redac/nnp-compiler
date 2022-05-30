@@ -82,7 +82,8 @@ class virtual_machine:
         # Partie données
         self.pointeur = -1
         self.pile = Pile()
-        self.base = 0
+        self.base = -2
+        #self.reserverBloc()
 
         logger.debug("VM initialised")
 
@@ -339,7 +340,7 @@ class virtual_machine:
             raise VMException("traStat")
         if self.base+nbp+1 >= self.pointeur:
             raise VMException("traStat")
-        self.pile.valeurs[self.pointeur-nbp]=self.po+1
+        self.pile.valeurs[self.pointeur-nbp]=self.co+1
         self.co=a
         self.base=self.pointeur-nbp-1
 
@@ -429,6 +430,9 @@ class virtual_machine:
             self.empilerParam(int(reg_empilerParam.match(l).group(1)))
         
         logger.debug("pointeur:  "+str(self.pointeur))
+        logger.debug("compteur ordinal:  "+str(self.co))
+        logger.debug("base:  "+str(self.base))
+        logger.debug("programme:  "+str(self.po))
         logger.debug(str(self.pile))
 
 
