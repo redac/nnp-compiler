@@ -474,7 +474,8 @@ def main():
     while vm.po[vm.co] != "finProg();":
         vm.analyse(vm.po[vm.co])
         vm.co += 1
-
+        logger.debug("CO:"+str(vm.co))
+    logger.debug("FIN DU PROGRAMME")
     f.close()
 
 
