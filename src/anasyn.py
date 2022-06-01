@@ -9,9 +9,6 @@ import sys
 import argparse
 import re
 import logging
-from tkinter import N
-
-from sqlalchemy import false, true
 
 import analex
 import codeGenerator
@@ -51,7 +48,6 @@ class AnaSynException(Exception):
 # Pour la génération de code
 # Chaque ajout de code se fera par cg.addCode("exemple de code objet")
 cg = codeGenerator.CodeGenerator()
-variable_global=false
 
 
 def program(lexical_analyser):
@@ -72,9 +68,7 @@ def specifProgPrinc(lexical_analyser):
 def corpsProgPrinc(lexical_analyser):
     if not lexical_analyser.isKeyword("begin"):
         logger.debug("Parsing declarations")
-        variable_global=true
         partieDecla(lexical_analyser)
-        variable_global=false
         logger.debug("End of declarations")
     lexical_analyser.acceptKeyword("begin")
 
