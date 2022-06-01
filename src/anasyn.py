@@ -3,37 +3,25 @@
 # @package anasyn
 # Syntactical Analyser package.
 #
+<<<<<<< HEAD
 
 from statistics import variance
+=======
+>>>>>>> 65ed6917c025cfdf5cb660ac9a624b8776e00abb
 import sys
 import argparse
-import re
 import logging
-from tkinter import N
 
 from sqlalchemy import false, true
 
 import analex
 import codeGenerator
+import symbol_table
 
 logger = logging.getLogger('anasyn')
 
 DEBUG = True
 LOGGING_LEVEL = logging.DEBUG
-
-
-# Identifier Table declaration
-#
-# keeps track of semantics of variables i.e. it stores information about the
-# scope and binding information about names, information about instances of
-# various entities such as variable and function names, classes, objects, etc.
-#
-# key = object identity (unique)
-# ['ident', 'type', @address, []]
-#
-
-identifierTable = {}
-anyVarsIDs = []    # Stores variables with unknown type
 
 
 class AnaSynException(Exception):
@@ -47,6 +35,9 @@ class AnaSynException(Exception):
 # Syntactical Diagrams
 ########################################################################
 
+
+# Pour la table des identificateurs
+tdi = symbol_table.symbol_table()
 
 # Pour la génération de code
 # Chaque ajout de code se fera par cg.addCode("exemple de code objet")
@@ -62,11 +53,15 @@ def program(lexical_analyser):
 
 
 def specifProgPrinc(lexical_analyser):
+    # Intentionally not adding the first procedure to the symbol table
     lexical_analyser.acceptKeyword("procedure")
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("Name of program : "+ident)
+<<<<<<< Updated upstream
     # key = object identity (unique)
     # identifierTable[id(ident)] = [ident, "procedure", len(identifierTable), []]
+=======
+>>>>>>> Stashed changes
 
 
 def corpsProgPrinc(lexical_analyser):
@@ -116,7 +111,8 @@ def declaOp(lexical_analyser):
 def procedure(lexical_analyser):
     lexical_analyser.acceptKeyword("procedure")
     ident = lexical_analyser.acceptIdentifier()
-    identifierTable[id(ident)] = [ident, "procedure", len(identifierTable), []]
+    # Add procedure to symbol table
+    tdi.add_ident(ident, "procedure")
     logger.debug("Name of procedure : "+ident)
 
     partieFormelle(lexical_analyser)
@@ -128,7 +124,8 @@ def procedure(lexical_analyser):
 def fonction(lexical_analyser):
     lexical_analyser.acceptKeyword("function")
     ident = lexical_analyser.acceptIdentifier()
-    identifierTable[id(ident)] = [ident, "function", len(identifierTable), []]
+    # Add function to symbol table
+    tdi.add_ident(ident, "function")
     logger.debug("Name of function : "+ident)
 
     partieFormelle(lexical_analyser)
@@ -190,13 +187,14 @@ def mode(lexical_analyser):
 
 def nnpType(lexical_analyser):
     # Parses types
-    for obj in identifierTable:
-        objType = identifierTable[obj][1]
+    for obj in tdi.table:
+        objType = tdi.table[obj][1]
         if objType == "any":
-            anyVarsIDs.append(obj)
+            tdi.any_vars_ids.append(obj)
     if lexical_analyser.isKeyword("integer"):
         lexical_analyser.acceptKeyword("integer")
         logger.debug("integer type")
+<<<<<<< HEAD
         for varID in anyVarsIDs:
             identifierTable[varID][1] = "integer"
         anyVarsIDs[:]=[]
@@ -206,6 +204,14 @@ def nnpType(lexical_analyser):
             identifierTable[varID][1] = "boolean"
             anyVarsIDs.remove(varID)
         anyVarsIDs[:]=[]
+=======
+        for varID in tdi.any_vars_ids:
+            tdi.table[varID][1] = "integer"
+    elif lexical_analyser.isKeyword("boolean"):
+        lexical_analyser.acceptKeyword("boolean")
+        for varID in tdi.any_vars_ids:
+            tdi.table[varID][1] = "boolean"
+>>>>>>> 65ed6917c025cfdf5cb660ac9a624b8776e00abb
         logger.debug("boolean type")
     else:
         logger.error("Unknown type found <" +
@@ -241,7 +247,7 @@ def listeIdent(lexical_analyser):
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("identifier found: "+str(ident))
     # Add variable to the ident table, with an "any" type for now
-    identifierTable[id(str(ident))] = [ident, "any", len(identifierTable), []]
+    tdi.add_ident(ident, "any")
     if lexical_analyser.isCharacter(","):
         lexical_analyser.acceptCharacter(",")
         n = listeIdent(lexical_analyser)+1
@@ -274,6 +280,7 @@ def instr(lexical_analyser):
         ident = lexical_analyser.acceptIdentifier()
         if lexical_analyser.isSymbol(":="):
             # affectation
+<<<<<<< HEAD
             t1= None
             for ide in identifierTable:
                 if ident==identifierTable[ide][0]:
@@ -284,6 +291,16 @@ def instr(lexical_analyser):
             t2=expression(lexical_analyser)
             if t1 != t2:
                 raise AnaSynException("TypeError: := requires 2 arguments of same type")
+=======
+            addr = tdi.get_address(ident)
+            cg.addCode("empiler("+str(addr)+")      //ici")
+            lexical_analyser.acceptSymbol(":=")
+            a2 = lexical_analyser.get_value()
+            if not ((is_integer(a1) and is_integer(a2)) or (is_boolean(a1) and is_boolean(a2))):
+                raise AnaSynException(
+                    "TypeError: affectation requires same type")
+            expression(lexical_analyser)
+>>>>>>> 65ed6917c025cfdf5cb660ac9a624b8776e00abb
             cg.addCode("affectation()")
             logger.debug("parsed affectation")
         elif lexical_analyser.isCharacter("("):
@@ -318,10 +335,15 @@ def expression(lexical_analyser):
         lexical_analyser.acceptKeyword("or")
         t2=exp1(lexical_analyser)
         cg.addCode("ou()")
+<<<<<<< HEAD
         # type check
         if t1 != "boolean" or t2 != "boolean":
             raise AnaSynException("TypeError: ou requires booleans")
     return t1
+=======
+        if (not is_boolean(a1)) or (not is_boolean(a2)):
+            raise AnaSynException("TypeError: ou() requires booleans")
+>>>>>>> 65ed6917c025cfdf5cb660ac9a624b8776e00abb
 
 
 def exp1(lexical_analyser):
@@ -334,7 +356,12 @@ def exp1(lexical_analyser):
         if t1 != "boolean" or t2 != "boolean":
             raise AnaSynException("TypeError: et requires booleans")
         cg.addCode("et()")
+<<<<<<< HEAD
     return t1
+=======
+        if (not is_boolean(a1)) or (not is_boolean(a2)):
+            raise AnaSynException("TypeError: et() requires booleans")
+>>>>>>> 65ed6917c025cfdf5cb660ac9a624b8776e00abb
 
 
 def exp2(lexical_analyser):
@@ -348,6 +375,7 @@ def exp2(lexical_analyser):
         inf = lexical_analyser.isSymbol("<")
         sup = lexical_analyser.isSymbol(">")
         opRel(lexical_analyser)
+<<<<<<< HEAD
         t2=exp3(lexical_analyser)
         # type check
         if t1 != "integer" or t2 != "integer":
@@ -359,6 +387,12 @@ def exp2(lexical_analyser):
                 raise AnaSynException("TypeError: > requires integers")
             else:
                 raise AnaSynException("TypeError: >= requires integers")
+=======
+        a2 = lexical_analyser.get_value()
+        exp3(lexical_analyser)
+        if (not is_integer(a1)) or (not is_integer(a2)):
+            raise AnaSynException("TypeError: comparison requires integers")
+>>>>>>> 65ed6917c025cfdf5cb660ac9a624b8776e00abb
         if infeg:
             cg.addCode("infeg()")
         elif inf:
@@ -369,7 +403,11 @@ def exp2(lexical_analyser):
             cg.addCode("supeg()")
         return "boolean"
     elif lexical_analyser.isSymbol("=") or \
+<<<<<<< HEAD
             lexical_analyser.isSymbol("/="):
+=======
+            lexical_analyser.isSymbol("/="):  # est ce qu'on peut comparer l'égalité de 2 booléens?
+>>>>>>> 65ed6917c025cfdf5cb660ac9a624b8776e00abb
         egal = lexical_analyser.isSymbol("=")
         opRel(lexical_analyser)
         t2=exp3(lexical_analyser)
@@ -430,7 +468,13 @@ def exp3(lexical_analyser):
                 raise AnaSynException("TypeError: add() requires integers")
         if moins:
             cg.addCode("sous()")
+<<<<<<< HEAD
             
+=======
+            if (not is_integer(a1)) or (not is_integer(a2)):
+                raise AnaSynException("TypeError: sous() requires integers")
+
+>>>>>>> 65ed6917c025cfdf5cb660ac9a624b8776e00abb
         else:
             cg.addCode("add()")
     return t1
@@ -511,7 +555,6 @@ def prim(lexical_analyser):
         cg.addCode("moins()")
     return t2
 
-
 def opUnaire(lexical_analyser):
     logger.debug("parsing unary operator: " + lexical_analyser.get_value())
     if lexical_analyser.isCharacter("+"):
@@ -543,11 +586,15 @@ def elemPrim(lexical_analyser):
         return valeur(lexical_analyser)
     elif lexical_analyser.isIdentifier():
         ident = lexical_analyser.acceptIdentifier()
+<<<<<<< HEAD
         type= None
         for ide in identifierTable:
                 if ident==identifierTable[ide][0]:
                     addr=identifierTable[ide][2]
                     type = identifierTable[ide][1]
+=======
+        addr = tdi.get_address(ident)
+>>>>>>> 65ed6917c025cfdf5cb660ac9a624b8776e00abb
         cg.addCode("empiler("+str(addr)+")      //ici")
         cg.addCode("valeurPile()")
         if lexical_analyser.isCharacter("("):			# Appel fonct
@@ -603,6 +650,7 @@ def es(lexical_analyser):
         lexical_analyser.acceptKeyword("get")
         lexical_analyser.acceptCharacter("(")
         ident = lexical_analyser.acceptIdentifier()
+<<<<<<< HEAD
         type = None
         for ide in identifierTable:
                 if ident==identifierTable[ide][0]:
@@ -611,6 +659,9 @@ def es(lexical_analyser):
         # type check
         if type != "integer":
             raise AnaSynException("TypeError: get() requires an integer")
+=======
+        addr = tdi.get_address(ident)
+>>>>>>> 65ed6917c025cfdf5cb660ac9a624b8776e00abb
         cg.addCode("empiler("+str(addr)+")              //ici")
         cg.addCode("get()")
         lexical_analyser.acceptCharacter(")")
@@ -619,10 +670,16 @@ def es(lexical_analyser):
         lexical_analyser.acceptKeyword("put")
         lexical_analyser.acceptCharacter("(")
         ident = lexical_analyser.get_value()
+<<<<<<< HEAD
         type=expression(lexical_analyser)
         # type check
         if type != "integer":
             raise AnaSynException("TypeError: put() requires an integer")
+=======
+        if not is_integer(ident):
+            raise AnaSynException("TypeError: put() requires integers")
+        expression(lexical_analyser)
+>>>>>>> 65ed6917c025cfdf5cb660ac9a624b8776e00abb
         cg.addCode("put()")
         lexical_analyser.acceptCharacter(")")
         logger.debug("Call to put")
@@ -636,8 +693,15 @@ def boucle(lexical_analyser):
     lexical_analyser.acceptKeyword("while")
     ad1 = cg.get_instruction_counter()
     a = lexical_analyser.get_value()
+<<<<<<< HEAD
     # if not is_boolean(a):
     #     raise AnaSynException("TypeError: while requires a boolean")
+=======
+    print(is_boolean(a))
+    print(a)
+    if not is_boolean(a):
+        raise AnaSynException("TypeError: while requires a boolean")
+>>>>>>> 65ed6917c025cfdf5cb660ac9a624b8776e00abb
 
     expression(lexical_analyser)
 
@@ -666,7 +730,7 @@ def altern(lexical_analyser):
     index_ad1 = cg.get_instruction_counter()
     cg.addCode("tze(ad1); //ne doit pas apparaitre")
     suiteInstr(lexical_analyser)
-    index_ad2=None
+    index_ad2 = None
 
     if lexical_analyser.isKeyword("else"):
         lexical_analyser.acceptKeyword("else")
@@ -679,8 +743,8 @@ def altern(lexical_analyser):
     lexical_analyser.acceptKeyword("end")
     ad2 = cg.get_instruction_counter()
     instr = "tra"
-    if index_ad2==None:        #Si if sans else
-        index_ad2=index_ad1
+    if index_ad2 == None:  # Si if sans else
+        index_ad2 = index_ad1
         instr = "tze"
     cg.set_instruction_at_index(index_ad2, instr+"("+str(ad2)+"); // if")
     logger.debug("end of if")
@@ -691,6 +755,18 @@ def retour(lexical_analyser):
     lexical_analyser.acceptKeyword("return")
     expression(lexical_analyser)
 
+<<<<<<< HEAD
+=======
+
+def is_boolean(b):
+    return b in {"true", "false"} or tdi.get_type(b) == "boolean"
+
+
+def is_integer(i):
+
+    return isinstance(i, int) or tdi.get_type(i) == "integer"
+
+>>>>>>> 65ed6917c025cfdf5cb660ac9a624b8776e00abb
 ########################################################################
 
 
@@ -752,7 +828,7 @@ def main():
 
     if args.show_ident_table:
         print("------ IDENTIFIER TABLE ------")
-        print(str(identifierTable))
+        print(str(tdi.table))
         print("------ END OF IDENTIFIER TABLE ------")
 
     if outputFilename != "":
@@ -776,7 +852,7 @@ def main():
 
     # print("\n\n")
     # cg.affiche()
-    
+
 
 ########################################################################
 
