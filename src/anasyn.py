@@ -4,15 +4,20 @@
 # Syntactical Analyser package.
 #
 
+<<<<<<< HEAD
+from glob import glob
+=======
+>>>>>>> main
 from statistics import variance
 import sys
 import argparse
 import re
 import logging
-from tkinter import N
+
 
 import analex
 import codeGenerator
+from symbol_table import Symbol_table
 
 logger = logging.getLogger('anasyn')
 
@@ -32,6 +37,8 @@ LOGGING_LEVEL = logging.DEBUG
 
 identifierTable = {}
 anyVarsIDs = []    # Stores variables with unknown type
+identifier_table= Symbol_table()
+Proc_call=None
 
 
 class AnaSynException(Exception):
@@ -55,6 +62,7 @@ def program(lexical_analyser):
     specifProgPrinc(lexical_analyser)
     lexical_analyser.acceptKeyword("is")
     cg.addCode("debutProg();")
+    cg.addCode("tra(ad1);")
     corpsProgPrinc(lexical_analyser)
 
 
@@ -62,8 +70,6 @@ def specifProgPrinc(lexical_analyser):
     lexical_analyser.acceptKeyword("procedure")
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("Name of program : "+ident)
-    # key = object identity (unique)
-    identifierTable[id(ident)] = [ident, "procedure", len(identifierTable), []]
 
 
 def corpsProgPrinc(lexical_analyser):
@@ -72,12 +78,10 @@ def corpsProgPrinc(lexical_analyser):
         partieDecla(lexical_analyser)
         logger.debug("End of declarations")
     lexical_analyser.acceptKeyword("begin")
-
     if not lexical_analyser.isKeyword("end"):
         logger.debug("Parsing instructions")
         suiteInstr(lexical_analyser)
         logger.debug("End of instructions")
-
     lexical_analyser.acceptKeyword("end")
     lexical_analyser.acceptFel()
     cg.addCode("finProg();")
@@ -87,9 +91,9 @@ def corpsProgPrinc(lexical_analyser):
 def partieDecla(lexical_analyser):
     if lexical_analyser.isKeyword("procedure") or lexical_analyser.isKeyword("function"):
         listeDeclaOp(lexical_analyser)
+        cg.set_instruction_at_index(1,"tra("+str(cg.get_instruction_counter())+")")
         if not lexical_analyser.isKeyword("begin"):
             listeDeclaVar(lexical_analyser)
-
     else:
         listeDeclaVar(lexical_analyser)
 
@@ -111,28 +115,31 @@ def declaOp(lexical_analyser):
 def procedure(lexical_analyser):
     lexical_analyser.acceptKeyword("procedure")
     ident = lexical_analyser.acceptIdentifier()
-    identifierTable[id(ident)] = [ident, "procedure", len(identifierTable), []]
+    identifier_table.insertOp(ident,"procedure",cg.get_instruction_counter())
+    identifier_table.current_scope=identifier_table.getOpScope(ident)
     logger.debug("Name of procedure : "+ident)
-
-    partieFormelle(lexical_analyser)
-
+    n=partieFormelle(lexical_analyser)
+    identifier_table.setNbParam(ident,n)
     lexical_analyser.acceptKeyword("is")
     corpsProc(lexical_analyser)
+    cg.addCode("retourProc()")
+    identifier_table.current_scope=0
 
 
 def fonction(lexical_analyser):
     lexical_analyser.acceptKeyword("function")
     ident = lexical_analyser.acceptIdentifier()
-    identifierTable[id(ident)] = [ident, "function", len(identifierTable), []]
+    identifier_table.insertOp(ident,"function",cg.get_instruction_counter())
     logger.debug("Name of function : "+ident)
-
-    partieFormelle(lexical_analyser)
-
+    identifier_table.current_scope=identifier_table.getOpScope(ident)
+    n=partieFormelle(lexical_analyser)
+    identifier_table.setNbParam(ident,n)
     lexical_analyser.acceptKeyword("return")
     nnpType(lexical_analyser)
-
     lexical_analyser.acceptKeyword("is")
     corpsFonct(lexical_analyser)
+    identifier_table.current_scope=0
+
 
 
 def corpsProc(lexical_analyser):
@@ -153,25 +160,31 @@ def corpsFonct(lexical_analyser):
 
 def partieFormelle(lexical_analyser):
     lexical_analyser.acceptCharacter("(")
+    n=0
     if not lexical_analyser.isCharacter(")"):
-        listeSpecifFormelles(lexical_analyser)
+        n=listeSpecifFormelles(lexical_analyser)
     lexical_analyser.acceptCharacter(")")
+    return n
 
 
 def listeSpecifFormelles(lexical_analyser):
-    specif(lexical_analyser)
+    n=specif(lexical_analyser)
     if not lexical_analyser.isCharacter(")"):
         lexical_analyser.acceptCharacter(";")
         listeSpecifFormelles(lexical_analyser)
+    return n
 
 
 def specif(lexical_analyser):
-    listeIdent(lexical_analyser)
+    n=listeIdent(lexical_analyser)
+    io=""
     lexical_analyser.acceptCharacter(":")
     if lexical_analyser.isKeyword("in"):
-        mode(lexical_analyser)
-
+        io=mode(lexical_analyser)
+    if io=="in out":
+        identifier_table.setAsParam(n)
     nnpType(lexical_analyser)
+    return n
 
 
 def mode(lexical_analyser):
@@ -179,27 +192,40 @@ def mode(lexical_analyser):
     if lexical_analyser.isKeyword("out"):
         lexical_analyser.acceptKeyword("out")
         logger.debug("in out parameter")
+        return "in out"
     else:
         logger.debug("in parameter")
+        return "in"
 
 
 def nnpType(lexical_analyser):
     # Parses types
-    for obj in identifierTable:
-        objType = identifierTable[obj][1]
+    for obj in identifier_table.var_tables[identifier_table.current_scope].ident_list:
+        objType = obj.type
         if objType == "any":
-            anyVarsIDs.append(obj)
+            anyVarsIDs.append(obj.name)
     if lexical_analyser.isKeyword("integer"):
         lexical_analyser.acceptKeyword("integer")
         logger.debug("integer type")
         for varID in anyVarsIDs:
+<<<<<<< HEAD
+            # identifierTable[varID][1] = "integer"
+            identifier_table.setType(varID,"integer")
+=======
             identifierTable[varID][1] = "integer"
+>>>>>>> main
         anyVarsIDs[:]=[]
     elif lexical_analyser.isKeyword("boolean"):
         lexical_analyser.acceptKeyword("boolean")
         for varID in anyVarsIDs:
+<<<<<<< HEAD
+            # identifierTable[varID][1] = "boolean"
+            identifier_table.setType(varID,"boolean")
+            # anyVarsIDs.remove(varID)
+=======
             identifierTable[varID][1] = "boolean"
             anyVarsIDs.remove(varID)
+>>>>>>> main
         anyVarsIDs[:]=[]
         logger.debug("boolean type")
     else:
@@ -207,7 +233,6 @@ def nnpType(lexical_analyser):
                      lexical_analyser.get_value() + ">!")
         raise AnaSynException("Unknown type found <" +
                               lexical_analyser.get_value() + ">!")
-
 
 def partieDeclaProc(lexical_analyser):
     listeDeclaVar(lexical_analyser)
@@ -236,7 +261,8 @@ def listeIdent(lexical_analyser):
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("identifier found: "+str(ident))
     # Add variable to the ident table, with an "any" type for now
-    identifierTable[id(str(ident))] = [ident, "any", len(identifierTable), []]
+    # identifierTable[id(str(ident))] = [ident, "any", len(identifierTable), []]
+    identifier_table.insertInCurrentScope(ident,"any")
     if lexical_analyser.isCharacter(","):
         lexical_analyser.acceptCharacter(",")
         n = listeIdent(lexical_analyser)+1
@@ -269,12 +295,23 @@ def instr(lexical_analyser):
         ident = lexical_analyser.acceptIdentifier()
         if lexical_analyser.isSymbol(":="):
             # affectation
+<<<<<<< HEAD
+            addr=identifier_table.getAdress(ident)
+            t1=identifier_table.getType(ident)
+            if identifier_table.isGlobal(ident):
+                cg.addCode("empiler("+str(addr)+")      //ici")
+            elif identifier_table.isParam(ident):
+                cg.addCode("empilerParam("+str(addr)+")      //ici")
+            else:
+                cg.addCode("empilerAd("+str(addr)+")      //ici")
+=======
             t1= None
             for ide in identifierTable:
                 if ident==identifierTable[ide][0]:
                     addr=identifierTable[ide][2]-1
                     t1 = identifierTable[ide][1]
             cg.addCode("empiler("+str(addr)+")      //ici")
+>>>>>>> main
             lexical_analyser.acceptSymbol(":=")
             t2=expression(lexical_analyser)
             if t1 != t2:
@@ -282,12 +319,20 @@ def instr(lexical_analyser):
             cg.addCode("affectation()")
             logger.debug("parsed affectation")
         elif lexical_analyser.isCharacter("("):
+            cg.addCode("reserverBloc()")
             lexical_analyser.acceptCharacter("(")
+            nbParam=0
+            global Proc_call
+            Proc_call=[ident,-1]
+            print("dans la procédure "+str(Proc_call) )
             if not lexical_analyser.isCharacter(")"):
-                listePe(lexical_analyser)
-
+                nbParam=listePe(lexical_analyser,0)+1
             lexical_analyser.acceptCharacter(")")
             logger.debug("parsed procedure call")
+            line=identifier_table.getOpLine(ident)
+            cg.addCode("traStat("+str(line-1)+","+str(nbParam)+")")
+            print("fin de la procédure")
+            Proc_call=None
         else:
             logger.error("Expecting procedure call or affectation!")
             raise AnaSynException("Expecting procedure call or affectation!")
@@ -299,11 +344,15 @@ def instr(lexical_analyser):
                               lexical_analyser.get_value() + ">!")
 
 
-def listePe(lexical_analyser):
+def listePe(lexical_analyser,n):
+    global Proc_call
+    if Proc_call!=None:
+        Proc_call[1]+=1
     expression(lexical_analyser)
     if lexical_analyser.isCharacter(","):
         lexical_analyser.acceptCharacter(",")
-        listePe(lexical_analyser)
+        return listePe(lexical_analyser,n+1)
+    return n
 
 
 def expression(lexical_analyser):
@@ -529,6 +578,7 @@ def opUnaire(lexical_analyser):
 
 def elemPrim(lexical_analyser):
     logger.debug("parsing elemPrim: " + str(lexical_analyser.get_value()))
+    # print(identifier_table)
     if lexical_analyser.isCharacter("("):
         lexical_analyser.acceptCharacter("(")
         type= expression(lexical_analyser)
@@ -539,24 +589,53 @@ def elemPrim(lexical_analyser):
     elif lexical_analyser.isIdentifier():
         ident = lexical_analyser.acceptIdentifier()
         type= None
+<<<<<<< HEAD
+=======
         for ide in identifierTable:
                 if ident==identifierTable[ide][0]:
                     addr=identifierTable[ide][2]-1
                     type = identifierTable[ide][1]
         cg.addCode("empiler("+str(addr)+")      //ici")
         cg.addCode("valeurPile()")
+>>>>>>> main
         if lexical_analyser.isCharacter("("):			# Appel fonct
+            type="integer"
+            line=identifier_table.getOpLine(ident)
+            cg.addCode("reserverBloc()")
             lexical_analyser.acceptCharacter("(")
+            nbParam=0
             if not lexical_analyser.isCharacter(")"):
-                listePe(lexical_analyser)
-
+                nbParam=listePe(lexical_analyser,0)+1
             lexical_analyser.acceptCharacter(")")
+            cg.addCode("traStat("+str(line-1)+","+str(nbParam)+")")
             logger.debug("parsed procedure call")
-
             logger.debug("Call to function: " + ident)
         else:
+            addr=identifier_table.getAdress(ident)
+            type=identifier_table.getType(ident)
+            if identifier_table.isGlobal(ident):
+                cg.addCode("empiler("+str(addr)+")      //ici")
+            elif identifier_table.isParam(ident):
+                cg.addCode("empilerParam("+str(addr)+")      //ici")
+            else:
+                cg.addCode("empilerAd("+str(addr)+")      //ici")
+            global Proc_call
+            if Proc_call==None:
+                cg.addCode("valeurPile()")
+            else:
+                print(str(Proc_call))
+                num_var=Proc_call[1]
+                nom_Proc=Proc_call[0]
+                # while num_var<identifier_table.getOpIdent(nom_Proc).nbParam:
+                nom_var=identifier_table.var_tables[identifier_table.getOpScope(nom_Proc)].ident_list[num_var].name
+                if not identifier_table.var_tables[identifier_table.getOpScope(nom_Proc)].getIdentificatorInTable(nom_var).param:
+                    cg.addCode("valeurPile()")
+                    print(nom_var+"  "+str(num_var))
             logger.debug("Use of an identifier as an expression: " + ident)
+<<<<<<< HEAD
+=======
             # ...
+>>>>>>> main
         return type
     else:
         logger.error("Unknown Value!")
@@ -599,6 +678,22 @@ def es(lexical_analyser):
         lexical_analyser.acceptCharacter("(")
         ident = lexical_analyser.acceptIdentifier()
         type = None
+<<<<<<< HEAD
+        # for ide in identifierTable:
+        #         if ident==identifierTable[ide][0]:
+        #             addr=identifierTable[ide][2]
+        addr=identifier_table.getAdress(ident)
+        type=identifier_table.getType(ident)
+        # type check
+        if type != "integer":
+            raise AnaSynException("TypeError: get() requires an integer")
+        if identifier_table.isGlobal(ident):
+            cg.addCode("empiler("+str(addr)+")      //ici")
+        elif identifier_table.isParam(ident):
+            cg.addCode("empilerParam("+str(addr)+")      //ici")
+        else:
+            cg.addCode("empilerAd("+str(addr)+")      //ici")
+=======
         for ide in identifierTable:
                 if ident==identifierTable[ide][0]:
                     addr=identifierTable[ide][2]-1
@@ -607,6 +702,7 @@ def es(lexical_analyser):
         if type != "integer":
             raise AnaSynException("TypeError: get() requires an integer")
         cg.addCode("empiler("+str(addr)+")              //ici")
+>>>>>>> main
         cg.addCode("get()")
         lexical_analyser.acceptCharacter(")")
         logger.debug("Call to get "+ident)
@@ -644,8 +740,7 @@ def boucle(lexical_analyser):
     lexical_analyser.acceptKeyword("end")
     cg.addCode("tra("+str(ad1)+"); //back to loop")
     ad2 = cg.get_instruction_counter()
-    cg.set_instruction_at_index(
-        index_ad2, "tze("+str(ad2)+"); //loop condition (end)")
+    cg.set_instruction_at_index(index_ad2, "tze("+str(ad2)+"); //loop condition (end)")
     logger.debug("end of while loop ")
 
 
@@ -685,6 +780,10 @@ def retour(lexical_analyser):
     logger.debug("parsing return instruction")
     lexical_analyser.acceptKeyword("return")
     expression(lexical_analyser)
+<<<<<<< HEAD
+    cg.addCode("retourFonc()")
+=======
+>>>>>>> main
 
 ########################################################################
 
@@ -747,7 +846,7 @@ def main():
 
     if args.show_ident_table:
         print("------ IDENTIFIER TABLE ------")
-        print(str(identifierTable))
+        print(str(identifier_table))
         print("------ END OF IDENTIFIER TABLE ------")
 
     if outputFilename != "":

@@ -82,7 +82,12 @@ class virtual_machine:
         # Partie données
         self.pointeur = -1
         self.pile = Pile()
+<<<<<<< HEAD
+        self.base = -2
+        #self.reserverBloc()
+=======
         self.base = 0
+>>>>>>> main
 
         logger.debug("VM initialised")
 
@@ -150,8 +155,8 @@ class virtual_machine:
             raise VMException("sous")
         a2 = self.depiler()
         a1 = self.depiler()
-        self.empiler(a2-a1)
-        logger.debug("SOUS: "+str(a2)+" - " + str(a1))
+        self.empiler(a1-a2)
+        logger.debug("SOUS: "+str(a1)+" - " + str(a2))
 
     def mult(self):
         # Précondition
@@ -168,8 +173,8 @@ class virtual_machine:
             raise VMException("div")
         a2 = self.depiler()
         a1 = self.depiler()
-        self.empiler(a2/a1)
-        logger.debug("DIV: "+str(a2)+" / " + str(a1))
+        self.empiler(a1//a2)
+        logger.debug("DIV: "+str(a1)+" / " + str(a2))
 
     def egal(self):
         # Précondition
@@ -322,12 +327,21 @@ class virtual_machine:
     
     def empilerAd(self,ad):
         # préconditions
+<<<<<<< HEAD
+        addr=int(ad)
+        if addr<0:
+            raise VMException("empilerAd")
+        if addr+self.base+1>self.pointeur:
+            raise VMException("empilerAd: adresse incorrecte")
+        self.empiler(addr+self.base+2)
+=======
         if ad<0:
             raise VMException("empilerAd")
         if ad+self.base+1>self.pointeur:
             raise VMException("empilerAd: adresse incorrecte")
         val=self.pile.valeurs[ad+self.base+1]
         self.empiler(val)
+>>>>>>> main
     
     def reserverBloc(self):
         self.empiler(self.base)
@@ -339,7 +353,11 @@ class virtual_machine:
             raise VMException("traStat")
         if self.base+nbp+1 >= self.pointeur:
             raise VMException("traStat")
+<<<<<<< HEAD
+        self.pile.valeurs[self.pointeur-nbp]=self.co
+=======
         self.pile.valeurs[self.pointeur-nbp]=self.po+1
+>>>>>>> main
         self.co=a
         self.base=self.pointeur-nbp-1
 
@@ -429,6 +447,9 @@ class virtual_machine:
             self.empilerParam(int(reg_empilerParam.match(l).group(1)))
         
         logger.debug("pointeur:  "+str(self.pointeur))
+        logger.debug("compteur ordinal:  "+str(self.co))
+        logger.debug("base:  "+str(self.base))
+        # logger.debug("programme:  "+str(self.po))
         logger.debug(str(self.pile))
 
 
@@ -470,7 +491,12 @@ def main():
     while vm.po[vm.co] != "finProg();":
         vm.analyse(vm.po[vm.co])
         vm.co += 1
+<<<<<<< HEAD
+        # logger.debug("CO:"+str(vm.co))
+    logger.debug("FIN DU PROGRAMME")
+=======
 
+>>>>>>> main
     f.close()
 
 
