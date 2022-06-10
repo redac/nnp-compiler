@@ -64,6 +64,7 @@ def program(lexical_analyser):
 
 
 def specifProgPrinc(lexical_analyser):
+    # Intentionally not adding the first procedure to the symbol table
     lexical_analyser.acceptKeyword("procedure")
     ident = lexical_analyser.acceptIdentifier()
     logger.debug("Name of program : "+ident)
@@ -251,6 +252,7 @@ def listeIdent(lexical_analyser):
     # Add variable to the ident table, with an "any" type for now
     # identifierTable[id(str(ident))] = [ident, "any", len(identifierTable), []]
     identifier_table.insertInCurrentScope(ident,"any")
+    
     if lexical_analyser.isCharacter(","):
         lexical_analyser.acceptCharacter(",")
         n = listeIdent(lexical_analyser)+1
@@ -455,7 +457,6 @@ def exp3(lexical_analyser):
                 raise AnaSynException("TypeError: add() requires integers")
         if moins:
             cg.addCode("sous()")
-            
         else:
             cg.addCode("add()")
     return t1
@@ -535,7 +536,6 @@ def prim(lexical_analyser):
     elif moins:
         cg.addCode("moins()")
     return t2
-
 
 def opUnaire(lexical_analyser):
     logger.debug("parsing unary operator: " + lexical_analyser.get_value())
@@ -713,7 +713,7 @@ def altern(lexical_analyser):
     index_ad1 = cg.get_instruction_counter()
     cg.addCode("tze(ad1); //ne doit pas apparaitre")
     suiteInstr(lexical_analyser)
-    index_ad2=None
+    index_ad2 = None
 
     if lexical_analyser.isKeyword("else"):
         lexical_analyser.acceptKeyword("else")
@@ -726,8 +726,8 @@ def altern(lexical_analyser):
     lexical_analyser.acceptKeyword("end")
     ad2 = cg.get_instruction_counter()
     instr = "tra"
-    if index_ad2==None:        #Si if sans else
-        index_ad2=index_ad1
+    if index_ad2 == None:  # Si if sans else
+        index_ad2 = index_ad1
         instr = "tze"
     cg.set_instruction_at_index(index_ad2, instr+"("+str(ad2)+"); // if")
     logger.debug("end of if")
@@ -824,7 +824,7 @@ def main():
 
     # print("\n\n")
     # cg.affiche()
-    
+
 
 ########################################################################
 
