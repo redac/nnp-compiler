@@ -4,10 +4,7 @@
 # Syntactical Analyser package.
 #
 
-<<<<<<< HEAD
 from glob import glob
-=======
->>>>>>> main
 from statistics import variance
 import sys
 import argparse
@@ -208,24 +205,15 @@ def nnpType(lexical_analyser):
         lexical_analyser.acceptKeyword("integer")
         logger.debug("integer type")
         for varID in anyVarsIDs:
-<<<<<<< HEAD
             # identifierTable[varID][1] = "integer"
             identifier_table.setType(varID,"integer")
-=======
-            identifierTable[varID][1] = "integer"
->>>>>>> main
         anyVarsIDs[:]=[]
     elif lexical_analyser.isKeyword("boolean"):
         lexical_analyser.acceptKeyword("boolean")
         for varID in anyVarsIDs:
-<<<<<<< HEAD
             # identifierTable[varID][1] = "boolean"
             identifier_table.setType(varID,"boolean")
             # anyVarsIDs.remove(varID)
-=======
-            identifierTable[varID][1] = "boolean"
-            anyVarsIDs.remove(varID)
->>>>>>> main
         anyVarsIDs[:]=[]
         logger.debug("boolean type")
     else:
@@ -295,7 +283,6 @@ def instr(lexical_analyser):
         ident = lexical_analyser.acceptIdentifier()
         if lexical_analyser.isSymbol(":="):
             # affectation
-<<<<<<< HEAD
             addr=identifier_table.getAdress(ident)
             t1=identifier_table.getType(ident)
             if identifier_table.isGlobal(ident):
@@ -304,14 +291,6 @@ def instr(lexical_analyser):
                 cg.addCode("empilerParam("+str(addr)+")      //ici")
             else:
                 cg.addCode("empilerAd("+str(addr)+")      //ici")
-=======
-            t1= None
-            for ide in identifierTable:
-                if ident==identifierTable[ide][0]:
-                    addr=identifierTable[ide][2]-1
-                    t1 = identifierTable[ide][1]
-            cg.addCode("empiler("+str(addr)+")      //ici")
->>>>>>> main
             lexical_analyser.acceptSymbol(":=")
             t2=expression(lexical_analyser)
             if t1 != t2:
@@ -347,7 +326,9 @@ def instr(lexical_analyser):
 def listePe(lexical_analyser,n):
     global Proc_call
     if Proc_call!=None:
-        Proc_call[1]+=1
+        a=Proc_call[1]
+        a+=1
+        Proc_call[1]=a
     expression(lexical_analyser)
     if lexical_analyser.isCharacter(","):
         lexical_analyser.acceptCharacter(",")
@@ -589,15 +570,6 @@ def elemPrim(lexical_analyser):
     elif lexical_analyser.isIdentifier():
         ident = lexical_analyser.acceptIdentifier()
         type= None
-<<<<<<< HEAD
-=======
-        for ide in identifierTable:
-                if ident==identifierTable[ide][0]:
-                    addr=identifierTable[ide][2]-1
-                    type = identifierTable[ide][1]
-        cg.addCode("empiler("+str(addr)+")      //ici")
-        cg.addCode("valeurPile()")
->>>>>>> main
         if lexical_analyser.isCharacter("("):			# Appel fonct
             type="integer"
             line=identifier_table.getOpLine(ident)
@@ -632,10 +604,6 @@ def elemPrim(lexical_analyser):
                     cg.addCode("valeurPile()")
                     print(nom_var+"  "+str(num_var))
             logger.debug("Use of an identifier as an expression: " + ident)
-<<<<<<< HEAD
-=======
-            # ...
->>>>>>> main
         return type
     else:
         logger.error("Unknown Value!")
@@ -678,7 +646,6 @@ def es(lexical_analyser):
         lexical_analyser.acceptCharacter("(")
         ident = lexical_analyser.acceptIdentifier()
         type = None
-<<<<<<< HEAD
         # for ide in identifierTable:
         #         if ident==identifierTable[ide][0]:
         #             addr=identifierTable[ide][2]
@@ -693,16 +660,6 @@ def es(lexical_analyser):
             cg.addCode("empilerParam("+str(addr)+")      //ici")
         else:
             cg.addCode("empilerAd("+str(addr)+")      //ici")
-=======
-        for ide in identifierTable:
-                if ident==identifierTable[ide][0]:
-                    addr=identifierTable[ide][2]-1
-                    type = identifierTable[ide][1]
-        # type check
-        if type != "integer":
-            raise AnaSynException("TypeError: get() requires an integer")
-        cg.addCode("empiler("+str(addr)+")              //ici")
->>>>>>> main
         cg.addCode("get()")
         lexical_analyser.acceptCharacter(")")
         logger.debug("Call to get "+ident)
@@ -780,10 +737,7 @@ def retour(lexical_analyser):
     logger.debug("parsing return instruction")
     lexical_analyser.acceptKeyword("return")
     expression(lexical_analyser)
-<<<<<<< HEAD
     cg.addCode("retourFonc()")
-=======
->>>>>>> main
 
 ########################################################################
 
