@@ -11,7 +11,6 @@ class CodeGenerator:
     def addCode(self, code):
         self.generatedCode.append((self.instrIndex, code))
         self.instrIndex += 1
-        print("Code:    "+code+"    added")
 
     def get_instruction_counter(self):
         return self.instrIndex
