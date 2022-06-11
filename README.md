@@ -15,3 +15,5 @@ python3 src/vm.py output.out
 ```
 
 use -h for more information
+
+For more information on the source code, visit the [wiki](https://github.com/redac/nnp-compiler/wiki).
