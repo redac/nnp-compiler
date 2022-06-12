@@ -3,15 +3,16 @@ class CodeGenerator:
 
     # Constructeur
     def __init__(self):
-        self.generatedCode = []
-        self.instrIndex = 0
+        self.generatedCode = []  # tableau contenant le programme déjà compilé
+        self.instrIndex = 0      # indice du tableau generatedCode
 
     ########### Méthodes ###########
 
+
+    # permet d'écrire le code dans le tableau
     def addCode(self, code):
         self.generatedCode.append((self.instrIndex, code))
         self.instrIndex += 1
-        print("Code:    "+code+"    added")
 
     def get_instruction_counter(self):
         return self.instrIndex
