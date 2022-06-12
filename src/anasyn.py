@@ -304,7 +304,7 @@ def instr(lexical_analyser):
             if not lexical_analyser.isCharacter(")"):
                 nbParam = listePe(lexical_analyser, 0)+1
             if nbParam!=identifier_table.getOpNbparam(ident):
-                raise AnaSynException("Not the good amount of parameters: function "+ident+" expected "+str(identifier_table.getOpNbparam(ident))+" arguments, but was given "+str(nbParam))
+                raise AnaSynException("Not the good amount of parameters: procedure "+ident+" expected "+str(identifier_table.getOpNbparam(ident))+" arguments, but was given "+str(nbParam))
             lexical_analyser.acceptCharacter(")")
             logger.debug("parsed procedure call")
             line = identifier_table.getOpLine(ident)
