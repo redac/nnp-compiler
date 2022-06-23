@@ -14,6 +14,6 @@ Run your compiled NNP code using
 python3 src/vm.py output.out
 ```
 
-use -h for more information
+use the `-h` flag to display help and more information regarding the commands.
 
 For more information on the source code, visit the [wiki](https://github.com/redac/nnp-compiler/wiki).
